@@ -1,0 +1,188 @@
+package com.example.promart.service;
+
+import com.example.promart.model.ApproveSeller;
+import com.example.promart.model.Product;
+import com.example.promart.model.Seller;
+import com.example.promart.repository.ApproveSellerRepository;
+import com.example.promart.repository.SellerRepository;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.geo.Point;
+import org.springframework.stereotype.Service;
+
+@Service
+public class SellerServiceImpl implements SellerService {
+
+    private static final Logger logger = LoggerFactory.getLogger(SellerServiceImpl.class);
+
+    @Autowired
+    private SellerRepository sellerRepository;
+
+    @Autowired
+    private ApproveSellerRepository approveSellerRepository;
+
+    @Override
+    public Seller registerSeller(Seller seller) {
+        Optional<Seller> existingSeller = sellerRepository.findByEmail(seller.getEmail());
+        if (existingSeller.isPresent()) {
+            throw new RuntimeException("Seller with this email already exists!");
+        }
+        return sellerRepository.save(seller);
+    }
+
+    @Override
+    public List<Seller> getAllSellers() {
+        return sellerRepository.findAll();
+    }
+
+    @Override
+    public Seller getSellerByEmail(String email) {
+        return sellerRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Seller not found!"));
+    }
+
+    @Override
+    public List<Seller> getNearbySellers(double latitude, double longitude, double maxDistanceKm) {
+        try {
+            Point userLocation = new Point(longitude, latitude); // Correctly create the point from latitude and
+                                                                 // longitude
+            logger.info("Fetching nearby sellers for location: {}, {}", latitude, longitude);
+            // Fetch the nearby sellers using the repository method
+            List<Seller> sellers = sellerRepository.findByLocationNear(longitude, latitude, maxDistanceKm * 1000); // Convert
+                                                                                                                   // km
+                                                                                                                   // to
+                                                                                                                   // meters
+
+            logger.info("Found {} sellers near location: {}, {}", sellers.size(), latitude, longitude);
+            return sellers;
+        } catch (Exception e) {
+            logger.error("Error fetching nearby sellers", e);
+            throw new RuntimeException("Error fetching nearby sellers", e);
+        }
+    }
+
+    public Seller getSellerById(String _id) {
+        return sellerRepository.findById(_id).orElseThrow(() -> new RuntimeException("Seller not found"));
+    }
+
+    public List<Product> searchProducts(String shopId, String query) {
+        // Find the seller by ID
+        Optional<Seller> sellerOptional = sellerRepository.findById(shopId);
+
+        if (sellerOptional.isPresent()) {
+            Seller seller = sellerOptional.get();
+
+            // Filter products that match the search query
+            return seller.getProducts().stream()
+                    .filter(product -> product.getProductName().toLowerCase().contains(query.toLowerCase()))
+                    .collect(Collectors.toList());
+        } else {
+            return new ArrayList<>(); // Return empty if seller not found
+        }
+    }
+
+    // Register Seller - Save in approveSellers Collection
+ // Register Seller - Save in approveSellers Collection
+@Override
+public ApproveSeller registerSellerApprove(ApproveSeller approveSeller) {
+    // Check if seller already exists in the sellers collection
+    Optional<Seller> existingSeller = sellerRepository.findByEmail(approveSeller.getEmail());
+    
+    // Check if seller is already in the approveSellers collection
+    Optional<ApproveSeller> existingRegisteredSeller = approveSellerRepository.findByEmail(approveSeller.getEmail());
+    
+    if (existingSeller.isPresent()) {
+        throw new RuntimeException("Seller with this email already exists!");
+    }
+
+    if (existingRegisteredSeller.isPresent()) {
+        throw new RuntimeException("Seller with this email is already pending approval!");
+    }
+
+    // Save the new seller for approval
+    return approveSellerRepository.save(approveSeller);
+}
+
+
+    // Get All Pending Approvals
+    public List<ApproveSeller> getPendingApprovals() {
+        return approveSellerRepository.findAll();
+    }
+
+    // Approve Seller - Move from approveSellers to sellers collection
+    public String approveSeller(String email) {
+        Optional<ApproveSeller> approveSellerOpt = approveSellerRepository.findByEmail(email);
+        if (approveSellerOpt.isPresent()) {
+            ApproveSeller approveSeller = approveSellerOpt.get();
+
+            // Move data to Seller collection
+            Seller seller = new Seller(
+                    approveSeller.getShopName(),
+                    approveSeller.getOwnerName(),
+                    approveSeller.getEmail(),
+                    approveSeller.getPhone(),
+                    approveSeller.getAddress(),
+                    approveSeller.getCategories(),
+                    approveSeller.getCustomCategory(),
+                    approveSeller.getPassword(),
+                    approveSeller.getShopImageUrl(),
+                    approveSeller.getLocation());
+
+            sellerRepository.save(seller); // Save to sellers collection
+            approveSellerRepository.deleteById(approveSeller.getId()); // Remove from approveSellers collection
+
+            return "Seller approved successfully!";
+        }
+        return "Seller not found!";
+    }
+
+    // Reject Seller - Remove from approveSellers Collection
+    public String rejectSeller(String email) {
+        Optional<ApproveSeller> approveSellerOpt = approveSellerRepository.findByEmail(email);
+        if (approveSellerOpt.isPresent()) {
+            approveSellerRepository.deleteById(approveSellerOpt.get().getId());
+            return "Seller rejected!";
+        }
+        return "Seller not found!";
+    }
+
+    public boolean approveOrRejectSeller(String sellerId, String status) {
+        Optional<ApproveSeller> approveSellerOptional = approveSellerRepository.findById(sellerId);
+
+        if (!approveSellerOptional.isPresent()) {
+            logger.error("Seller with ID {} not found in approval list", sellerId);
+            return false;
+        }
+
+        ApproveSeller approveSeller = approveSellerOptional.get();
+
+        if ("approved".equalsIgnoreCase(status)) {
+            // Convert ApproveSeller to Seller
+            Seller newSeller = new Seller();
+            newSeller.setShopName(approveSeller.getShopName());
+            newSeller.setOwnerName(approveSeller.getOwnerName());
+            newSeller.setEmail(approveSeller.getEmail());
+            newSeller.setPhone(approveSeller.getPhone());
+            newSeller.setAddress(approveSeller.getAddress());
+            newSeller.setCategories(approveSeller.getCategories());
+            newSeller.setCustomCategory(approveSeller.getCustomCategory());
+            newSeller.setPassword(approveSeller.getPassword());
+            newSeller.setShopImageUrl(approveSeller.getShopImageUrl());
+            newSeller.setLocation(approveSeller.getLocation());
+            newSeller.setProducts(approveSeller.getProducts());
+
+            // Save to Seller collection
+            sellerRepository.save(newSeller);
+        }
+
+        // Remove from ApproveSeller collection (whether approved or rejected)
+        approveSellerRepository.deleteById(sellerId);
+        logger.info("Seller {} successfully {}", sellerId, status);
+        return true;
+    }
+
+}

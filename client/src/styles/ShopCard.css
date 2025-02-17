@@ -1,0 +1,74 @@
+/* ShopCard.css */
+.shop-card {
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 200px;
+    height: 250px;
+    transition: all 0.3s ease-in-out;
+}
+
+.shop-card h3,
+.shop-card p {
+    color: black;  /* Ensure the text inside the card is black */
+}
+
+.shop-image {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.shop-info {
+    margin-top: 10px;
+}
+
+/* When View All is selected */
+.large-card {
+    width: 100%; /* Takes up full width of screen */
+    height: 350px;
+    max-width: 600px; /* Limiting max width for large card */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.large-card .shop-image {
+    width: 180px;
+    height: 180px;
+}
+
+  
+  /* Grid Layout */
+  .shop-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+  }
+  
+  /* View All - List Layout */
+  .shop-grid.view-all {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  /* View All Button */
+  .view-all-btn {
+    background: #ff3269;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s;
+  }
+  
+  .view-all-btn:hover {
+    background: #e62e5d;
+  }

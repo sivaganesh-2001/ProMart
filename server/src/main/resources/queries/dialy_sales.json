@@ -1,0 +1,22 @@
+[
+    {
+      "$match": {
+        "sellerId": "msivaganesh1111@gmail.com"
+      }
+    },
+    {
+      "$group": {
+        "_id": {
+          "year": { "$year": "$billGeneratedTime" },
+          "month": { "$month": "$billGeneratedTime" },
+          "day": { "$dayOfMonth": "$billGeneratedTime" }
+        },
+        "totalSales": { "$sum": "$totalAmount" },
+        "totalOrders": { "$sum": 1 }
+      }
+    },
+    {
+      "$sort": { "_id": 1 }
+    }
+  ]
+  
