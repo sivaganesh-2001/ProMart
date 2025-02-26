@@ -1,6 +1,7 @@
 package com.example.promart.controller;
 
 import com.example.promart.model.ApproveSeller;
+import com.example.promart.repository.ApproveSellerRepository;
 import com.example.promart.service.ApproveSellerService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,9 +16,18 @@ import java.util.List;
 public class ApproveSellerController {
        @Autowired
     private final ApproveSellerService approveSellerService;
+      @Autowired
+    private ApproveSellerRepository approveSellerRepository;
+
 
     public ApproveSellerController(ApproveSellerService approveSellerService) {
         this.approveSellerService = approveSellerService;
+    }
+
+    @GetMapping("/approve-seller/count")
+    public ResponseEntity<Long> getApproveSellerCount() {
+        long count = approveSellerRepository.count();
+        return ResponseEntity.ok(count);
     }
 
     @GetMapping("/approvals")

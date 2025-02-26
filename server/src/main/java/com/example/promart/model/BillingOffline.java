@@ -1,30 +1,30 @@
-package com.example.promart.model;
+    package com.example.promart.model;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+    import java.time.LocalDateTime;
+    import java.util.List;
+    import org.springframework.data.annotation.Id;
+    import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(collection = "billings_offline")
-public class BillingOffline {
-    @Id
-    private String id;  
-    private String customerEmail;
-    private String sellerId;
-    private List<ProductDetails> items;
-    private double totalAmount;
-    private String phone;
-    private LocalDateTime orderDate;
-    private LocalDateTime billGeneratedTime;
+    @Document(collection = "billings_offline")
+    public class BillingOffline {
+        @Id
+        private String id;  
+        private String customerEmail;
+        private String sellerId;
+        private List<ProductDetails> items;
+        private double totalAmount;
+        private String phone;
+        private LocalDateTime orderDate;
+        private LocalDateTime billGeneratedTime;
 
-    // Analytics Fields
-    private String paymentMethod;  // Cash, Card, UPI, etc.
-    private double discountApplied;
-    private double taxAmount;
-    private double profitMargin;
-    private String mostSoldCategory;
-    private boolean repeatCustomer;
-    private String salesChannel; // Walk-in, Phone Order, App
+        // Analytics Fields
+        private String paymentMethod;  // Cash, Card, UPI, etc.
+        private double discountApplied;
+        private double taxAmount;
+        private double profitMargin;
+        private String mostSoldCategory;
+        private boolean repeatCustomer;
+        private String salesChannel; // Walk-in, Phone Order, App
 
     public BillingOffline() {
     }

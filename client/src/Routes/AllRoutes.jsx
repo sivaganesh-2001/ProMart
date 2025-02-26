@@ -18,7 +18,7 @@ import Payment from '../Pages/Payment';
 import OrderReview from '../Pages/OrderReviewPage';
 import OrderReviewPayment from '../Pages/OrderReviewPagePayment';
 import OrderPage from '../Pages/OrderPage';
-
+import SearchedProductsPage from '../Pages/SearchedProductsPage';
 // Shop Pages
 import ExploreShops from '../components/ExploreShops/ExploreShops';
 import AllShopsPage from '../Pages/AllShopPage';
@@ -27,19 +27,30 @@ import ProductDetailsPage from '../Pages/ProductDetailsPage';
 import { CategoryShops } from '../components';
 
 // Seller Pages
-import Dashboard from '../Pages/owner/Dashboard';
-import Products from '../Pages/owner/Products';
-import OrderHistory from '../Pages/owner/SellerOrderHistory';
-import Orders from '../Pages/owner/Orders';
-import Overview from '../Pages/owner/Analysis';
-import Billing from '../Pages/owner/Billing';
-import AddProduct from '../Pages/owner/AddProducts';
-import SellerAnalyticDashboard from '../Pages/owner/SellerAnalyticDashboard';
-import SellerTimelyDashboard from '../Pages/Analytics/SellerDashboard';
+import Dashboard from '../Pages/seller/Dashboard';
+import Products from '../Pages/seller/Products';
+import OrderHistory from '../Pages/seller/SellerOrderHistory';
+import Orders from '../Pages/seller/Orders';
+import Overview from '../Pages/seller/Analysis';
+import Billing from '../Pages/seller/Billing';
+import AddProduct from '../Pages/seller/AddProducts';
+import HourlySalesPage from '../Pages/seller/SellerAnalytics/HourlySalesPage';
+import DailySalesPage from '../Pages/seller/SellerAnalytics/DailySalesPage';
+import WeeklySalesPage from '../Pages/seller/SellerAnalytics/WeeklySalesPage';
+import MonthlySalesPage from '../Pages/seller/SellerAnalytics/DailySalesPage';
+import YearlySalesPage from '../Pages/seller/SellerAnalytics/YearlySalesPage';
+import OrderStatusPage from '../Pages/seller/SellerAnalytics/OrderStatusPage';
+import ProductMovingSpeedPage from '../Pages/seller/SellerAnalytics/FastAndSlowMovingPage';
+import SalesModePage from '../Pages/seller/SellerAnalytics/SalesModePage';
+// import SellerAnalyticDashboard from '../Pages/owner/SellerAnalyticDashboard';
+// import SellerTimelyDashboard from '../Pages/Analytics/SellerDashboard';
 // Admin Pages
 import AdminHome from '../Pages/admin/AdminHome';
 import Approve from '../Pages/admin/Approve';
-
+import Category from '../Pages/admin/Category';
+import Customer from '../Pages/admin/Customers';
+import Seller from '../Pages/admin/Sellers';
+import Product from '../Pages/admin/Product'
 function AllRoutes() {
   return (
     <Routes>
@@ -55,7 +66,7 @@ function AllRoutes() {
       <Route path="/category/:categoryName" element={<CategoryShops />} />
       <Route path="/account" element={<UserAccount />} />
 
-      <Route path="/seller-timely-dashboard" element={<SellerTimelyDashboard />} />
+      {/* <Route path="/seller-timely-dashboard" element={<SellerTimelyDashboard />} /> */}
 
 
       {/* Protected Customer Routes */}
@@ -68,6 +79,8 @@ function AllRoutes() {
         <Route path="/order-review" element={<OrderReview />} />
         <Route path="/order" element={<OrderPage />} />
         <Route path="/order-review-pay" element={<OrderReviewPayment />} />
+        <Route path="/search-results" element={<SearchedProductsPage />} />
+
       </Route>
 
       {/* Protected Seller Routes */}
@@ -79,13 +92,31 @@ function AllRoutes() {
         <Route path="/overview" element={<Overview />} />
         <Route path="/billing" element={<Billing />} />
         <Route path="/add-product" element={<AddProduct />} />
-        <Route path="/seller-analytics" element={<SellerAnalyticDashboard />} />
+
+
+        
+        {/* <Route path="/hourly-sales" element ={<HourlySalesPage/>}/>
+        <Route path="/daily-sales" element={<DailySalesPage />} /> */}
+        <Route path="/daily-sales" element ={<HourlySalesPage/>}/>
+        <Route path="/weekly-sales" element={<WeeklySalesPage />} />
+        <Route path="/monthly-sales" element={<MonthlySalesPage />} />
+        <Route path="/yearly-sales" element={<YearlySalesPage />} />
+        <Route path="/fast-slow-stocks" element={<ProductMovingSpeedPage />} />
+        <Route path="/order-status" element={<OrderStatusPage />} />
+        <Route path="/sales-mode" element={<SalesModePage />} />
+        
+
+        {/* <Route path="/seller-analytics" element={<SellerAnalyticDashboard />} /> */}
       </Route>
 
       {/* Protected Admin Routes */}
       <Route element={<ProtectedAdminRoute />}>
         <Route path="/admin-dashboard" element={<AdminHome />} />
         <Route path="/approve-seller" element={<Approve />} />
+        <Route path="/admin/categories" element={<Category />} />
+        <Route path="/admin/customers" element={<Customer />} />
+        <Route path="/admin/sellers" element={<Seller />} />
+        <Route path="/admin/products" element={<Product />} />
       </Route>
 
       {/* Redirect unknown seller routes */}

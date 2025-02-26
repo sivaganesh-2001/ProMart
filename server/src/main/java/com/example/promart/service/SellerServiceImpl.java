@@ -4,6 +4,7 @@ import com.example.promart.model.ApproveSeller;
 import com.example.promart.model.Product;
 import com.example.promart.model.Seller;
 import com.example.promart.repository.ApproveSellerRepository;
+import com.example.promart.repository.ProductRepository;
 import com.example.promart.repository.SellerRepository;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +26,32 @@ public class SellerServiceImpl implements SellerService {
 
     @Autowired
     private ApproveSellerRepository approveSellerRepository;
+
+      @Autowired
+    private ProductRepository productRepository;
+
+    public boolean deleteSellerAndProducts(String sellerId) {
+        // 🔹 Step 1: Find the Seller
+        Optional<Seller> sellerOpt = sellerRepository.findById(sellerId);
+        if (sellerOpt.isEmpty()) {
+            return false; // Seller not found
+        }
+
+        Seller seller = sellerOpt.get();
+
+        // 🔹 Step 2: Fetch All Products of the Seller
+        List<Product> sellerProducts = productRepository.findBySellerId(sellerId);
+
+        // 🔹 Step 3: Delete All Products
+        for (Product product : sellerProducts) {
+            productRepository.deleteById(product.getId());
+        }
+
+        // 🔹 Step 4: Delete Seller
+        sellerRepository.deleteById(sellerId);
+        
+        return true;
+    }
 
     @Override
     public Seller registerSeller(Seller seller) {

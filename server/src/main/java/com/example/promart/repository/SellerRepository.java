@@ -15,7 +15,7 @@ public interface SellerRepository extends MongoRepository<Seller, String> {
     Logger logger = LoggerFactory.getLogger(SellerRepository.class);
 
     Optional<Seller> findByEmail(String email);
-
+  
     Optional<Seller> findById(String id);
 
     @Query("{ location: { $near: { $geometry: { type: 'Point', coordinates: [ ?0, ?1 ] }, $maxDistance: ?2 } } }")

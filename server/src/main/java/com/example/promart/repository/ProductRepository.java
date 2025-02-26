@@ -1,10 +1,12 @@
 package com.example.promart.repository;
 
-import com.example.promart.model.Product;
+import java.util.List;
+
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
-import java.util.List;
+
+import com.example.promart.model.Product;
 
 @Repository
 public interface ProductRepository extends MongoRepository<Product, String> {
@@ -18,11 +20,15 @@ public interface ProductRepository extends MongoRepository<Product, String> {
     // Fetch top 5 popular products based on sold count
     List<Product> findTop5ByOrderBySoldCountDesc();
 
+
     // List<Product> findBySellerIdAndNameContainingIgnoreCase(String sellerId,
     // String productName);
 
     // Custom method to decrement stock
     @Query(value = "{ '_id': ?0 }")
     void decrementStockById(String id, int amount);
+
+List<Product> findByProductNameIgnoreCaseContaining(String productName);
+    
 
 }

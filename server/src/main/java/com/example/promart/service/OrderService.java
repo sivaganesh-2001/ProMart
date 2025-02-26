@@ -7,6 +7,7 @@ import com.example.promart.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -20,31 +21,33 @@ public class OrderService {
     @Autowired
     private SellerRepository sellerRepository;
 
-    // Place Order
     public Order placeOrder(Order orderRequest) {
+        // Set the orderDate to the current date and time
+        orderRequest.setOrderDate(LocalDateTime.now());
+    
         // 1️⃣ Save Order to Orders Collection
         Order savedOrder = orderRepository.save(orderRequest);
-
+    
         // 2️⃣ Find Seller by sellerId
         Optional<Seller> sellerOptional = sellerRepository.findById(orderRequest.getSellerId());
-
+    
         if (sellerOptional.isPresent()) {
             Seller seller = sellerOptional.get();
-
+    
             // 3️⃣ Ensure orders list is initialized
             if (seller.getOrders() == null) {
                 seller.setOrders(new ArrayList<>());
             }
-
+    
             // 4️⃣ Add Order Reference to Seller's orders List
             seller.getOrders().add(savedOrder);
-
+    
             // 5️⃣ Save Updated Seller
             sellerRepository.save(seller);
         } else {
             throw new RuntimeException("Seller not found with ID: " + orderRequest.getSellerId());
         }
-
+    
         return savedOrder;
     }
 

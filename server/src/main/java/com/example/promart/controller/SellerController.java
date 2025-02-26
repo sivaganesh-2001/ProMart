@@ -2,6 +2,7 @@ package com.example.promart.controller;
 import com.example.promart.model.ApproveSeller;
 import com.example.promart.model.Product;
 import com.example.promart.model.Seller;
+import com.example.promart.repository.SellerRepository;
 import com.example.promart.service.ProductService;
 import com.example.promart.service.SellerService;
 import java.util.List;
@@ -22,8 +23,9 @@ public class SellerController {
     private static final Logger logger = LoggerFactory.getLogger(SellerController.class);
 
     @Autowired
-
     private SellerService sellerService;
+    @Autowired
+    private SellerRepository sellerRepository;
 
     private final ProductService productService;
 
@@ -47,6 +49,17 @@ public class SellerController {
         return sellerService.getSellerByEmail(email);
     }
 
+    @GetMapping("/getId/{email}")
+    public ResponseEntity<String> getSellerIdByEmail(@PathVariable String email) {
+    Seller seller = sellerService.getSellerByEmail(email);
+    if (seller != null) {
+        return ResponseEntity.ok(seller.getId()); // Return only the ID
+    } else {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Seller not found");
+    }
+}
+
+
     @GetMapping("/nearby")
     public List<Seller> getNearbySellers(@RequestParam double latitude, @RequestParam double longitude) {
         try {
@@ -58,10 +71,15 @@ public class SellerController {
         }
     }
 
-
     @GetMapping("/id/{id}")
     public Seller getSellerById(@PathVariable String id) {
         return sellerService.getSellerById(id);
+    }
+
+    @GetMapping("/count")
+    public ResponseEntity<Long> getSellerCount() {
+        long count = sellerRepository.count();
+        return ResponseEntity.ok(count);
     }
 
     @GetMapping("/{sellerId}/products")
@@ -121,5 +139,15 @@ public ResponseEntity<String> approveSeller(@PathVariable String id, @RequestBod
     }
 }
 
+@DeleteMapping("/delete/{sellerId}")
+public ResponseEntity<String> deleteSeller(@PathVariable String sellerId) {
+    boolean isDeleted = sellerService.deleteSellerAndProducts(sellerId);
+
+    if (isDeleted) {
+        return ResponseEntity.ok("Seller and all associated products deleted successfully!");
+    } else {
+        return ResponseEntity.status(404).body("Seller not found!");
+    }
+}
 
 }

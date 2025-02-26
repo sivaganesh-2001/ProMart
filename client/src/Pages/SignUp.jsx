@@ -1,7 +1,8 @@
 import { 
     createUserWithEmailAndPassword, 
     GoogleAuthProvider, 
-    signInWithPopup 
+    signInWithPopup,
+    fetchSignInMethodsForEmail
 } from '@firebase/auth';
 import { auth, db } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -62,6 +63,16 @@ function SignUp() {
 
         setLoading(true);
         try {
+            // Check if the user already exists
+            const signInMethods = await fetchSignInMethodsForEmail(auth, email);
+            if (signInMethods.length > 0) {
+                // User already exists
+                toast.error("User  already exists. Please log in instead.");
+                setLoading(false);
+                return;
+            }
+
+            // Create new user
             const res = await createUserWithEmailAndPassword(auth, email, password);
 
             // Save user role to Firestore
@@ -69,7 +80,7 @@ function SignUp() {
 
             dispatch(userLogin(res.user));
             localStorage.setItem("userInfoF", JSON.stringify(res.user));
-            localStorage.setItem("customerEmail", email)
+            localStorage.setItem("customerEmail", email);
             toast.success("Signup Successful!");
 
             navigate('/');
@@ -80,21 +91,42 @@ function SignUp() {
         setLoading(false);
     };
 
+    const saveUserToBackend = async (user) => {
+        try {
+            const response = await fetch("http://localhost:8081/api/customers", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    customerName: user.displayName || user.email.split("@")[0], // Extract name from Google or email
+                    customerEmail: user.email
+                })
+            });
+    
+            if (!response.ok) {
+                throw new Error("Failed to save user to backend");
+            }
+        } catch (err) {
+            console.error("Error saving user to backend:", err);
+        }
+    };
+
     // Google Signup
     const handleGoogle = async () => {
         try {
             let res = await signInWithPopup(auth, provider);
-
-            // Save Google user role to Firestore
+            
+            // Save user details to Firestore and Backend
             await saveUserToFirestore(res.user);
+            await saveUserToBackend(res.user);
 
             dispatch(userLogin(res.user));
             localStorage.setItem("userInfoF", JSON.stringify(res.user));
-            console.log(res.user.email);
             localStorage.setItem("customerEmail", res.user.email);
             navigate("/");
         } catch (error) {
-            console.log(error);
+            console.error(error);
         }
     };
 

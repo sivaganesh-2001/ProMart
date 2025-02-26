@@ -18,91 +18,91 @@ function Addresses() {
   const [customerEmail, setCustomerEmail] = useState("");
   const [docId, setDocId] = useState(null);
 
-  useEffect(() => {
-    // Fetch user email from local storage
-    const userInfo = JSON.parse(localStorage.getItem("userInfoF"));
-    if (userInfo && userInfo.email) {
-      setCustomerEmail(userInfo.email);
-      fetchCustomerDetails(userInfo.email);
-    } else {
-      setLoading(false);
-    }
-  }, []);
+    useEffect(() => {
+      // Fetch user email from local storage
+      const userInfo = JSON.parse(localStorage.getItem("userInfoF"));
+      if (userInfo && userInfo.email) {
+        setCustomerEmail(userInfo.email);
+        fetchCustomerDetails(userInfo.email);
+      } else {
+        setLoading(false);
+      }
+    }, []);
 
-  // Fetch user details from Firestore
-  const fetchCustomerDetails = async (email) => {
-    try {
-      const usersCollection = collection(db, "users");
-      const q = query(usersCollection, where("email", "==", email));
-      const querySnapshot = await getDocs(q);
+    // Fetch user details from Firestore
+    const fetchCustomerDetails = async (email) => {
+      try {
+        const usersCollection = collection(db, "users");
+        const q = query(usersCollection, where("email", "==", email));
+        const querySnapshot = await getDocs(q);
 
-      if (!querySnapshot.empty) {
-        const userDoc = querySnapshot.docs[0];
-        setDocId(userDoc.id); // Save Firestore Document ID
-        const userData = userDoc.data();
+        if (!querySnapshot.empty) {
+          const userDoc = querySnapshot.docs[0];
+          setDocId(userDoc.id); // Save Firestore Document ID
+          const userData = userDoc.data();
 
-        // Set Customer Name & Store Previous Name
-        setName(userData.name || "");
-        setPrevName(userData.name || ""); // Store the initial name for comparison
+          // Set Customer Name & Store Previous Name
+          setName(userData.name || "");
+          setPrevName(userData.name || ""); // Store the initial name for comparison
 
-        // Split stored address into separate fields if it exists
-        if (userData.address) {
-          const addressParts = userData.address.split(", ");
-          setAddressFields({
-            doorNo: addressParts[0] || "",
-            area: addressParts[1] || "",
-            city: addressParts[2] || "",
-            state: addressParts[3] || "",
-            pincode: addressParts[4] || "",
-          });
+          // Split stored address into separate fields if it exists
+          if (userData.address) {
+            const addressParts = userData.address.split(", ");
+            setAddressFields({
+              doorNo: addressParts[0] || "",
+              area: addressParts[1] || "",
+              city: addressParts[2] || "",
+              state: addressParts[3] || "",
+              pincode: addressParts[4] || "",
+            });
+          }
+          setPhone(userData.phone || "");
+        } else {
+          console.log("No matching document found for the email:", email);
         }
-        setPhone(userData.phone || "");
-      } else {
-        console.log("No matching document found for the email:", email);
+      } catch (error) {
+        console.error("Error fetching customer details:", error);
       }
-    } catch (error) {
-      console.error("Error fetching customer details:", error);
-    }
-    setLoading(false);
-  };
+      setLoading(false);
+    };
 
-  // Handle Input Change
-  const handleChange = (e) => {
-    setAddressFields({ ...addressFields, [e.target.name]: e.target.value });
-  };
+    // Handle Input Change
+    const handleChange = (e) => {
+      setAddressFields({ ...addressFields, [e.target.name]: e.target.value });
+    };
 
-  const handlePhoneChange = (e) => {
-    setPhone(e.target.value);
-  };
+    const handlePhoneChange = (e) => {
+      setPhone(e.target.value);
+    };
 
-  const handleNameChange = (e) => {
-    setName(e.target.value);
-  };
+    const handleNameChange = (e) => {
+      setName(e.target.value);
+    };
 
-  // Handle Form Submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+    // Handle Form Submission
+    const handleSubmit = async (e) => {
+      e.preventDefault();
 
-    if (phone.length !== 10) {
-      alert("Phone number must be 10 digits.");
-      return;
-    }
-
-    // Merge address fields into a single string
-    const mergedAddress = `${addressFields.doorNo}, ${addressFields.area}, ${addressFields.city}, ${addressFields.state}, ${addressFields.pincode}`;
-
-    try {
-      if (docId) {
-        const userRef = doc(db, "users", docId);
-        await updateDoc(userRef, { name, address: mergedAddress, phone });
-
-        setIsEditing(false);
-      } else {
-        alert("Error: No matching user document found.");
+      if (phone.length !== 10) {
+        alert("Phone number must be 10 digits.");
+        return;
       }
-    } catch (error) {
-      console.error("Error saving details:", error);
-    }
+
+      // Merge address fields into a single string
+      const mergedAddress = `${addressFields.doorNo}, ${addressFields.area}, ${addressFields.city}, ${addressFields.state}, ${addressFields.pincode}`;
+
+      try {
+        if (docId) {
+          const userRef = doc(db, "users", docId);
+          await updateDoc(userRef, { name, address: mergedAddress, phone });
+
+          setIsEditing(false);
+        } else {
+          alert("Error: No matching user document found.");
+        }
+      } catch (error) {
+        console.error("Error saving details:", error);
+      }
 
     // Prepare Data for Backend
     const customerData = {

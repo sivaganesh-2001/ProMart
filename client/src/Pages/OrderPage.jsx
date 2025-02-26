@@ -209,7 +209,7 @@ const OrderPage = () => {
   {editAddress ? (
     <div className="flex flex-col gap-2">
       <div className="flex items-center">
-        <span className="material-icons mr-2">person</span>
+        <span className="material-icons mr-2">Name</span>
         <input
           type="text"
           placeholder="Name"
@@ -219,7 +219,7 @@ const OrderPage = () => {
         />
       </div>
       <div className="flex items-center">
-        <span className="material-icons mr-2">home</span>
+        <span className="material-icons mr-2">Address</span>
         <input
           type="text"
           placeholder="Address"
@@ -229,7 +229,7 @@ const OrderPage = () => {
         />
       </div>
       <div className="flex items-center">
-        <span className="material-icons mr-2">phone</span>
+        <span className="material-icons mr-2">Phone</span>
         <input
           type="text"
           placeholder="Mobile No"

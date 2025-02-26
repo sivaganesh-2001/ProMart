@@ -3,11 +3,9 @@ import { BsBag, BsSearch } from "react-icons/bs";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import axios from "axios";
-
-
+import ProductSearchBar from "./ProductSearchBar"; // Import the ProductSearchBar component
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyAiEvhHmhIdeKSVUF2DqUEVKdWi3LOOjIw"; 
-
 
 const Navbar = () => {
   const [currentCity, setCurrentCity] = useState("Fetching...");
@@ -15,7 +13,6 @@ const Navbar = () => {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
   const [cartCount, setCartCount] = useState(0); 
 
   const userData = useSelector((store) => store.userAuthReducer.user); // Get user data from redux store
@@ -35,7 +32,7 @@ const Navbar = () => {
               {
                 params: {
                   latlng: `${latitude},${longitude}`,
-                  key: GOOGLE_MAPS_API_KEY,// Replace with a secured key in production
+                  key: GOOGLE_MAPS_API_KEY,
                 },
               }
             );
@@ -47,7 +44,6 @@ const Navbar = () => {
               );
               
               const detectedCity = cityComponent?.long_name || "Unknown City";
-              setCurrentCity(cityComponent?.long_name || "Unknown City");
               setCurrentCity(detectedCity);
               localStorage.setItem("userLocation", detectedCity);
             } else {
@@ -102,33 +98,6 @@ const Navbar = () => {
     setCartCount(cartItems.length); // Assuming `cartItems` is an array of products
   }, [cartItems]);
 
-  // Fetch location suggestions from Google Places API
-const fetchLocationSuggestions = async (query) => {
-  if (!query) {
-    setSuggestions([]);
-    return;
-  }
-
-  try {
-    const response = await axios.get(
-      "https://maps.googleapis.com/maps/api/place/autocomplete/json",
-      {
-        params: {
-          input: query,
-          key: GOOGLE_MAPS_API_KEY,
-          components: "country:in", // Restrict to India (change as needed)
-          types: "(cities)", // Limit results to city names
-        },
-      }
-    );
-
-    setSuggestions(response.data.predictions || []);
-  } catch (error) {
-    console.error("Error fetching location suggestions:", error.response?.data || error.message);
-  }
-};
-
-
   // Handle selecting a location from the search results
   const handleLocationSelect = async (placeId) => {
     try {
@@ -149,7 +118,6 @@ const fetchLocationSuggestions = async (query) => {
     } catch (error) {
       console.error("Error fetching location details:", error);
     }
-
   };
 
   const getRedirectPath = () => {
@@ -183,20 +151,12 @@ const fetchLocationSuggestions = async (query) => {
           </h2>
         </div>
 
-        {/* Search Bar */}
-        <div>
-          <input
-            type="text"
-            className={`hidden md:flex md:w-[400px] lg:w-[800px] h-[42px] rounded-lg px-8 ${
-              !locationFetched ? "bg-gray-300 cursor-not-allowed" : ""
-            }`}
-            placeholder="Search for over 5000+ products"
-            disabled={!locationFetched}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <BsSearch className="hidden sm:flex md:hidden text-white text-[20px]" />
+        {/* Product Search Bar */}
+        <ProductSearchBar 
+          searchQuery={searchQuery} 
+          setSearchQuery={setSearchQuery} 
+          locationFetched={locationFetched} 
+        />
 
         {/* User Actions */}
         {!userData ? (
@@ -211,21 +171,19 @@ const fetchLocationSuggestions = async (query) => {
 
         <Link to="/cart">
           <button
-            className={`hidden sm:flex bg-[#FF3269] text-white text-[13px] md:text-[16px] font-semibold px-4 md:px-9  rounded-lg lg:flex mr-10 h-[60px] items-center justify-center ${
+            className={`hidden sm:flex bg-[#FF3269] text-white text-[13px] md:text-[16px] font-semibold px-4 md:px-9 rounded-lg lg:flex mr-10 h-[60px] items-center justify-center ${
               !locationFetched ? "bg-gray-300 cursor-not-allowed" : ""
             }`}
             disabled={!locationFetched}
           >
             <BsBag className="text-[24px] mr-3" />
-            {/* {userData ? `My Cart (${cartCount})` : "My Cart"} Show cart count if logged in */}
-            {userData ? `My Cart ` : "My Cart"} {/* Show cart count if logged in */}
+            {userData ? `My Cart ` : "My Cart"}
           </button>
         </Link>
       </div>
 
       {/* Location Modal */}
-   {/* Location Modal */}
-   {isLocationModalOpen && (
+      {isLocationModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-[90%] md:w-[50%]">
             <h2 className="text-lg font-bold mb-4">Select Your Location</h2>
@@ -243,7 +201,7 @@ const fetchLocationSuggestions = async (query) => {
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  fetchLocationSuggestions(e.target.value);
+                  //fetchLocationSuggestions(e.target.value);
                 }}
               />
 

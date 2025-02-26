@@ -1,32 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; // For navigation to OTP Page
-import { storage, auth, db } from "../../firebase"; // Firebase storage & authentication
+import { storage, auth } from "../../firebase"; // Firebase storage & authentication
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { doc, updateDoc } from "firebase/firestore"; // For updating user role in Firestore
 import axios from "axios";
 import { FaChevronDown } from "react-icons/fa";
-
-
-// Categories List (Can be modified easily)
-const allCategories = [
-  "Grocery",
-  "Beauty",
-  "Meat",
-  "Vegetables",
-  "Fitness",
-  "Gift",
-  "Petcare",
-  "Party",
-  "Kitchen",
-  // "Toys & Games",
-  // "Automobiles",
-  // "Sports & Fitness",
-  // "Jewelry & Accessories",
-  // "Handmade & Crafts",
-  // "Pet Supplies",
-  // "Gardening",
-  // "Others",
-];
+import LocationPicker from "./LocationPicker"; // Adjust the path as needed
 
 const SellerRegistration = () => {
   const [formData, setFormData] = useState({
@@ -35,36 +13,43 @@ const SellerRegistration = () => {
     email: "",
     phone: "",
     address: "",
-    categories: [],
-    customCategories: "",
+    categories: [], // Store selected category names
+    customCategory: "",
     password: "",
     confirmPassword: "",
     shopImage: null,
     imagePreview: null, // Preview state for the image
-    latitude:null,
-    longitude:null,
+    latitude: null,
+    longitude: null,
   });
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [useCurrentLocation, setUseCurrentLocation] = useState(false);
-  const navigate = useNavigate(); // For navigating to OTP page
-  const [userEmail, setUserEmail] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
-
+  const [categoriesList, setCategoriesList] = useState([]);
+  const [showMap, setShowMap] = useState(false);
+  const [usingCurrentLocation, setUsingCurrentLocation] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user && user.email) {
-        setUserEmail(user.email); // Set the email here
         setFormData((prev) => ({ ...prev, email: user.email })); // Set the email in formData
       }
     });
 
-    // Cleanup the listener when the component is unmounted
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get("http://localhost:8081/api/categories"); // Adjust the URL as needed
+        setCategoriesList(response.data); // Assuming response.data is an array of category objects
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+
+    fetchCategories();
+
     return () => unsubscribe();
-  }, []); // Ensure this runs only once when the component is mounted
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -84,14 +69,14 @@ const SellerRegistration = () => {
     }
   };
 
-  const handleCategoryChange = (category) => {
+  const handleCategoryChange = (categoryName) => {
     let updatedCategories = [...formData.categories];
 
-    if (updatedCategories.includes(category)) {
-      updatedCategories = updatedCategories.filter((cat) => cat !== category);
+    if (updatedCategories.includes(categoryName)) {
+      updatedCategories = updatedCategories.filter((cat) => cat !== categoryName);
     } else {
       if (updatedCategories.length < 3) {
-        updatedCategories.push(category);
+        updatedCategories.push(categoryName);
       } else {
         alert("You can select up to 3 categories only.");
         return;
@@ -99,16 +84,6 @@ const SellerRegistration = () => {
     }
 
     setFormData({ ...formData, categories: updatedCategories });
-  };
-
-  
-  const handleCustomCategoryChange = (e) => {
-    // Allow only letters and spaces for custom category
-    const value = e.target.value.replace(/[^a-zA-Z\s]/g, "");
-    setFormData({
-      ...formData,
-      customCategory: value,
-    });
   };
 
   const uploadImageToFirebase = async (file) => {
@@ -130,7 +105,7 @@ const SellerRegistration = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (
       !formData.shopName ||
       !formData.ownerName ||
@@ -142,23 +117,19 @@ const SellerRegistration = () => {
       setError("Please fill out all required fields correctly and upload the shop image.");
       return;
     }
-  
+
     try {
       setLoading(true);
-  
+
       // Upload shop image and get URL
       const imageUrl = await uploadImageToFirebase(formData.shopImage);
-  
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
-        setError("User not found");
+
+      const currentUser   = auth.currentUser  ;
+      if (!currentUser  ) {
+        setError("User   not found");
         return;
       }
-  
-      // Update role to seller in Firestore
-      // const userRef = doc(db, "users", currentUser.uid);
-      // await updateDoc(userRef, { role: "seller" });
-  
+
       // Prepare seller data
       const sellerData = {
         shopName: formData.shopName,
@@ -166,34 +137,24 @@ const SellerRegistration = () => {
         email: formData.email,
         phone: formData.phone,
         address: formData.address,
-        categories: formData.categories, // Ensure categories is an array
+        categories: formData.categories, // Ensure categories is an array of category names
         shopImageUrl: imageUrl,
         location: { x: formData.longitude, y: formData.latitude },
       };
-  
+
       console.log("Sending Seller Data:", sellerData); // Debugging
-  
+
       // Send the data to the backend
-
-      // await axios.post("http://localhost:8081/api/sellers", sellerData);
-      // alert("Seller registered successfully!");
-
-      
-
       await axios.post("http://localhost:8081/api/sellers/approve-seller", sellerData);
       alert("Seller registered successfully!");
-
-
-      // navigate("/otp"); // Redirect to OTP page
     } catch (error) {
       setError(error.response?.data?.message || "Failed to register seller");
     } finally {
       setLoading(false);
     }
   };
-  
 
-  const handleLocation = () => {
+  const handleCurrentLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((position) => {
         const { latitude, longitude } = position.coords;
@@ -207,12 +168,12 @@ const SellerRegistration = () => {
             const address = data.results[0]?.formatted_address || `${latitude}, ${longitude}`;
             setFormData({
               ...formData,
-              location: address,
               address: address, // Set the address text field to the current location
-              latitude:latitude,
-              longitude:longitude,
+              latitude: latitude,
+              longitude: longitude,
             });
-            setUseCurrentLocation(true);
+            setUsingCurrentLocation(true);
+            setShowMap(false); // Close the map if it was open
           })
           .catch((error) => {
             alert("Error fetching location data");
@@ -222,8 +183,6 @@ const SellerRegistration = () => {
       alert("Geolocation is not supported by this browser.");
     }
   };
-
-
 
   return (
     <div className="container mx-auto p-4">
@@ -299,44 +258,41 @@ const SellerRegistration = () => {
           />
         </div>
 
-
-        {/* <div>
+        <div>
           <label className="block">Shop Address:</label>
-          <div className="flex flex-col space-y-2">
+          <div className="flex gap-2 mb-2">
             <button
               type="button"
-              onClick={handleLocation}
+              onClick={handleCurrentLocation}
               className="bg-green-500 text-white p-2 rounded-md"
             >
               Use Current Location
             </button>
-            {useCurrentLocation ? (
-              <p className="text-sm text-gray-500">{formData.location}</p>
-            ) : (
-              <textarea
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                className="w-full border p-2 rounded-md"
-                rows="3"
-              />
-            )}
+            <button
+              type="button"
+              onClick={() => setShowMap(true)}
+              className="bg-blue-500 text-white p-2 rounded-md"
+            >
+              Select Location
+            </button>
           </div>
-        </div> */}
-
-
-        <div>
-          <label className="block">Shop Address:</label>
-          <button type="button" onClick={handleLocation} className="bg-green-500 text-white p-2 rounded-md">
-            Use Current Location
-          </button>
-          <textarea name="address" value={formData.address} onChange={handleChange} className="w-full border p-2 rounded-md" rows="3" required />
+          <textarea
+            name="address"
+            value={formData.address}
+            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            className="w-full border p-2 rounded-md"
+            rows="3"
+            required
+          />
+          {showMap && (
+  <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center">
+    <LocationPicker setShowMap={setShowMap} setFormData={setFormData} />
+  </div>
+)}
         </div>
 
-
         <div className="relative">
-      <div className="relative">
-          <label className="block">Categories </label>
+          <label className="block">Categories</label>
           <div className="relative border p-2 rounded-md flex justify-between items-center cursor-pointer" onClick={() => setDropdownOpen(!dropdownOpen)}>
             <span>{formData.categories.length > 0 ? formData.categories.join(", ") : "Select Categories"}</span>
             <FaChevronDown className={`transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
@@ -344,48 +300,15 @@ const SellerRegistration = () => {
 
           {dropdownOpen && (
             <div className="absolute left-0 w-full bg-white border rounded-md shadow-md mt-1 max-h-48 overflow-y-auto z-10">
-              {allCategories.map((category) => (
-                <label key={category} className="flex items-center space-x-2 p-2 hover:bg-gray-100 cursor-pointer">
-                  <input type="checkbox" checked={formData.categories.includes(category)} onChange={() => handleCategoryChange(category)} />
-                  <span>{category}</span>
+              {categoriesList.map((category) => (
+                <label key={category._id} className="flex items-center space-x-2 p-2 hover:bg-gray-100 cursor-pointer">
+                  <input type="checkbox" checked={formData.categories.includes(category.name)} onChange={() => handleCategoryChange(category.name)} />
+                  <span>{category.name}</span>
                 </label>
               ))}
             </div>
           )}
         </div>
-
-        {/* Custom Category Input */}
-        {formData.categories.includes("Others") && (
-          <div>
-            <label className="block">Custom Category:</label>
-            <input type="text" name="customCategory" value={formData.customCategory} onChange={handleCustomCategoryChange} className="w-full border p-2 rounded-md" required />
-          </div>
-        )}
-        </div>
-
-        {/* <div>
-          <label className="block">Password:</label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            className="w-full border p-2 rounded-md"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block">Confirm Password:</label>
-          <input
-            type="password"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            className="w-full border p-2 rounded-md"
-            required
-          />
-        </div> */}
 
         <button
           type="submit"

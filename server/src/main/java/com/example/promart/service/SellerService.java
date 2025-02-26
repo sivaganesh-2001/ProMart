@@ -17,4 +17,5 @@ public interface SellerService {
       public String approveSeller(String email);
       public String rejectSeller(String email);
       public boolean approveOrRejectSeller(String sellerId, String status) ;
+      public boolean deleteSellerAndProducts(String sellerId);
 }

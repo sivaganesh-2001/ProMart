@@ -15,14 +15,17 @@ public class Order {
     @Id
     private String id;
     private String customerEmail;
+    @Indexed
     private String sellerId;
     private List<ProductDetails> items;
     private double totalAmount;
     private String paymentMethod;
     private String address;
     private String phone;
+    @Indexed
     private String status; // pending, confirmed, cancelled
-    private LocalDateTime orderDate;
+    @Indexed
+    private LocalDateTime orderDate; // This should be a normal field
     private LocalDateTime statusUpdatedAt;
     private LocalDateTime processingTime;
 
@@ -49,8 +52,19 @@ public class Order {
         this.address = address;
         this.phone = phone;
         this.status = status;
-        this.orderDate = LocalDateTime.now();
+        this.orderDate = LocalDateTime.now(); // Set the orderDate to the current date and time
         this.statusUpdatedAt = LocalDateTime.now();
+    }
+
+    // Getters and Setters
+    // ... (rest of the getters and setters remain unchanged)
+
+    public LocalDateTime getOrderDate() {
+        return orderDate;
+    }
+
+    public void setOrderDate(LocalDateTime orderDate) {
+        this.orderDate = orderDate;
     }
 
     public String getId() {
@@ -123,14 +137,6 @@ public class Order {
 
     public void setStatus(String status) {
         this.status = status;
-    }
-
-    public LocalDateTime getOrderDate() {
-        return orderDate;
-    }
-
-    public void setOrderDate(LocalDateTime orderDate) {
-        this.orderDate = orderDate;
     }
 
     public LocalDateTime getStatusUpdatedAt() {

@@ -5,29 +5,31 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.List;
+    import java.time.Duration;
+    import java.time.LocalDateTime;
+    import java.util.List;
 
-@Document(collection = "order_history")
-public class OrderHistory {
+    @Document(collection = "order_history")
+    public class OrderHistory {
 
-    @Id
-    private String id;
-    private String customerEmail;
-    private String sellerId;
-    private List<ProductDetails> items;
-    private double totalAmount;
-    private double profitMargin;
-    private double discountApplied;
-    private double taxAmount;
-    private String paymentMethod;
-    private String address;
-    private String phone;
-    private String status; // delivered, cancelled
-    private String customerType; // new, returning
-    private LocalDateTime completedDate;
-
+        @Id
+        private String id;
+        private String customerEmail;
+        @Indexed
+        private String sellerId;
+        private List<ProductDetails> items;
+        private double totalAmount;
+        private double profitMargin;
+        private double discountApplied;
+        private double taxAmount;
+        private String paymentMethod;
+        private String address;
+        private String phone;
+        @Indexed
+        private String status; // delivered, cancelled
+        private String customerType; // new, returning
+       
+        private LocalDateTime completedDate;
 
     private LocalDateTime orderDate;
     private LocalDateTime statusUpdatedAt;

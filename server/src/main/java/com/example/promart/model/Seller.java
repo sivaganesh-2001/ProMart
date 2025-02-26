@@ -23,7 +23,7 @@ public class Seller {
     
     private String phone;
     private String address;
-
+    
     @DBRef
     private List<Order> orders = new ArrayList<>();
 
@@ -350,4 +350,5 @@ public class Seller {
     public void setReviewSentiments(String reviewSentiments) {
         this.reviewSentiments = reviewSentiments;
     }
+
 }
