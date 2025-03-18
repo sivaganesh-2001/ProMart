@@ -13,7 +13,7 @@ public interface ProductService {
     List<Product> getAllProducts();
 
     Product getProductById(String id);
-
+    public List<Product> getProductsByIds(List<String> ids);
     public boolean deleteProduct(String productId, String sellerEmail);
 
     public Product createProduct(Product product);

@@ -9,8 +9,35 @@ const CategoryShops = () => {
   const [loading, setLoading] = useState(true);
   const [sortType, setSortType] = useState("distance");
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoryId, setCategoryId] = useState(null);
   const { categoryName } = useParams(); // Get category name from URL
   const navigate = useNavigate();
+
+  // Fetch category ID from backend
+  useEffect(() => {
+    const fetchCategoryId = async () => {
+      try {
+        const response = await axios.get("http://localhost:8081/api/categories");
+        const categories = response.data;
+        console.log(categories);
+        // Find category ID based on categoryName
+        const matchedCategory = categories.find(
+          (cat) => cat.name.toLowerCase() === categoryName.toLowerCase()
+        );
+
+        if (matchedCategory) {
+          setCategoryId(matchedCategory.id);
+        } else {
+          console.log("No matching category found.");
+          setCategoryId(null);
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+
+    fetchCategoryId();
+  }, [categoryName]);
 
   // Get user location
   useEffect(() => {
@@ -48,11 +75,10 @@ const CategoryShops = () => {
 
       const shopsWithDistance = response.data.map((shop) => ({
         ...shop,
-        
         distance: calculateDistance(latitude, longitude, shop.location.y, shop.location.x),
         rating: shop.rating || 4.5, // Default rating if not available
-    
       }));
+
       setShops(shopsWithDistance);
       setLoading(false);
     } catch (error) {
@@ -90,13 +116,12 @@ const CategoryShops = () => {
     navigate(`/shop/${shop.id}`);
   };
 
-  // Filter shops based on category name from URL
-  const filteredShops = shops.filter((shop) =>
-    shop.categories.some((cat) => cat.toLowerCase() === categoryName.toLowerCase())
-  );
-  console.log("Fetched Shops:", shops);
+  // Filter shops based on fetched category ID
+  const filteredShops = categoryId
+    ? shops.filter((shop) => shop.categories.includes(categoryId))
+    : [];
 
-  
+  console.log("Fetched Shops:", shops);
 
   // Apply Sorting
   const sortedShops = [...filteredShops].sort((a, b) => {
@@ -148,7 +173,6 @@ const CategoryShops = () => {
           >
             <img src={shop.shopImageUrl} alt={shop.shopName} className="w-full h-40 object-cover rounded-md" />
             <h3 className="mt-2 font-semibold">{shop.shopName}</h3>
-            <p className="text-gray-600">Category: {shop.categories.join(", ")}</p>
             <p className="text-gray-600">Rating: ⭐ {shop.rating.toFixed(1)}</p>
             <p className="text-gray-600">Distance: {shop.distance.toFixed(2)} km</p>
           </div>

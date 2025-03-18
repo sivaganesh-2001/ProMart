@@ -7,4 +7,5 @@ import com.example.promart.model.Category;
 
 @Repository
 public interface CategoryRepository extends MongoRepository<Category, String> {
+
 }

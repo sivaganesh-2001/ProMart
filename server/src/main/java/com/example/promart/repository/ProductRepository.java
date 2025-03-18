@@ -19,7 +19,7 @@ public interface ProductRepository extends MongoRepository<Product, String> {
 
     // Fetch top 5 popular products based on sold count
     List<Product> findTop5ByOrderBySoldCountDesc();
-
+    List<Product> findByIdIn(List<String> ids);
 
     // List<Product> findBySellerIdAndNameContainingIgnoreCase(String sellerId,
     // String productName);

@@ -16,7 +16,6 @@ const menuItems = [
 
 // Sales Analysis Dropdown Items
 const salesAnalysisItems = [
-  // { name: "Hourly Sales", path: "/hourly-sales" },
   { name: "Daily Sales", path: "/daily-sales" },
   { name: "Weekly Sales", path: "/weekly-sales" },
   { name: "Monthly Sales", path: "/monthly-sales" },
@@ -27,12 +26,10 @@ const salesAnalysisItems = [
 ];
 
 export default function Sidebar() {
-  // Load dropdown state from localStorage
   const [isSalesDropdownOpen, setIsSalesDropdownOpen] = useState(
     localStorage.getItem("salesDropdownOpen") === "true"
   );
 
-  // Update localStorage whenever dropdown state changes
   useEffect(() => {
     localStorage.setItem("salesDropdownOpen", isSalesDropdownOpen);
   }, [isSalesDropdownOpen]);
@@ -45,7 +42,7 @@ export default function Sidebar() {
             key={item.path}
             className="flex items-center p-3 rounded-xl cursor-pointer text-gray-700 hover:bg-indigo-600 hover:text-white"
           >
-            <Link to={item.path} className="flex items-center w-full">
+            <Link to={item.path} className="flex items-center w-full text-lg font-semibold">
               {item.icon}
               <span className="ml-3">{item.name}</span>
             </Link>
@@ -54,7 +51,7 @@ export default function Sidebar() {
 
         {/* Sales Analysis Dropdown */}
         <li
-          className="flex items-center justify-between p-3 rounded-xl cursor-pointer text-gray-700 hover:bg-indigo-600 hover:text-white"
+          className="flex items-center justify-between p-3 rounded-xl cursor-pointer text-gray-700 hover:bg-indigo-600 hover:text-white text-lg font-semibold"
           onClick={() => setIsSalesDropdownOpen(!isSalesDropdownOpen)}
         >
           <div className="flex items-center">
@@ -72,7 +69,7 @@ export default function Sidebar() {
                 key={item.path}
                 className="flex items-center p-2 rounded-lg cursor-pointer text-gray-700 hover:bg-indigo-500 hover:text-white"
               >
-                <Link to={item.path} className="flex items-center w-full">
+                <Link to={item.path} className="flex items-center w-full text-lg font-semibold">
                   <span>{item.name}</span>
                 </Link>
               </li>

@@ -16,8 +16,6 @@ const ProductDetailsPage = () => {
           `http://localhost:8081/api/products/${productId}`
         );
         setProduct(response.data);
-        console.log("Selected Product ID:", productId);
-        console.log("Shop ID:", shopId);
       } catch (error) {
         console.error("Error fetching product details", error);
       } finally {
@@ -26,31 +24,64 @@ const ProductDetailsPage = () => {
     };
 
     fetchProductDetails();
-  }, [productId, shopId]); // Include shopId in dependencies
+  }, [productId, shopId]);
 
-  if (loading) return <div>Loading product details...</div>;
-  if (!product) return <div>No Product found</div>;
+  if (loading) return <div className="text-center text-lg">Loading product details...</div>;
+  if (!product) return <div className="text-center text-lg text-red-500">No Product found</div>;
+
+  // Determine stock status
+  let stockStatus, stockColor;
+  if (product.stock === 0) {
+    stockStatus = "Out of Stock";
+    stockColor = "bg-red-500";
+  } else if (product.stock > 0 && product.stock <= 20) {
+    stockStatus = "Low Stock";
+    stockColor = "bg-orange-500";
+  } else {
+    stockStatus = "In Stock";
+    stockColor = "bg-green-500";
+  }
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 p-6 shadow-lg rounded-lg bg-white">
-      <div className="flex flex-col md:flex-row">
+    <div className="max-w-4xl mx-auto mt-10 p-6 shadow-lg rounded-lg bg-white relative">
+      {/* Stock Badge */}
+      <div className={`absolute top-4 right-4 text-white px-4 py-1 rounded-md text-sm font-semibold ${stockColor}`}>
+        {stockStatus}
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Product Image */}
         <div className="w-full md:w-1/2">
-          <img src={product.imageUrl} alt={product.productName} className="w-full rounded-lg" />
+          <img
+            src={product.imageUrl}
+            alt={product.productName}
+            className="w-full h-auto rounded-lg shadow-md"
+          />
         </div>
 
-        <div className="w-full md:w-1/2 px-6">
-          <h1 className="text-2xl font-semibold">{product.productName}</h1>
-          <p className="text-gray-600 mt-2">{product.description}</p>
-          <p className="text-xl font-bold mt-2">₹{product.price}</p>
+        {/* Product Details */}
+        <div className="w-full md:w-1/2 space-y-4">
+          <h1 className="text-3xl font-bold">{product.productName}</h1>
+          <p className="text-lg text-gray-700">
+            <span className="font-semibold">Brand:</span> {product.brand}
+          </p>
+          <p className="text-gray-600">
+            <span className="font-semibold">Quantity:</span> {product.description}
+          </p>
 
-          <div className="flex items-center gap-4 mt-4">
-            {/* Pass shopId explicitly to AddToCartButton */}
+          {/* Price Section (Moved Below, Increased Size) */}
+          <p className="text-2xl font-bold text-gray-900 mt-4">
+            <span className="font-semibold">Price:</span> ₹{product.price}
+          </p>
+
+          <div className="flex items-center gap-4">
+            {/* Add to Cart Button */}
             <AddToCartButton product={product} shopId={shopId} />
 
             {/* Go to Cart Button */}
             <button
               onClick={() => navigate("/cart")}
-              className="bg-blue-500 text-white px-6 py-3 rounded-md text-lg font-semibold"
+              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-md text-lg font-semibold transition"
             >
               Go to Cart
             </button>

@@ -50,7 +50,6 @@ const SalesComparisonChart = () => {
             value={timeFrame}
             onChange={(e) => setTimeFrame(e.target.value)}
           >
-            <option value="day">Day</option>
             <option value="week">Week</option>
             <option value="month">Month</option>
             <option value="year">Year</option>

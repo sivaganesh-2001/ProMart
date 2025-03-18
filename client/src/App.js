@@ -2,11 +2,11 @@ import { ToastContainer } from "react-toastify";
 import { Footer, Navbar } from "./components";
 import AllRoutes from "./Routes/AllRoutes";
 import { useLocation } from "react-router-dom";
-
 import SellerLayout from "./components/layouts/SellerLayout";
 
 function App() {
   const { pathname } = useLocation();
+
   const isSellerRoute =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/products") ||
@@ -25,12 +25,22 @@ function App() {
     pathname.startsWith("/order-status") ||
     pathname.startsWith("/sales-mode");
 
+  const isAdminRoute =
+    pathname.startsWith("/admin-dashboard") ||
+    pathname.startsWith("/approve-seller") ||
+    pathname.startsWith("/admin/categories") ||
+    pathname.startsWith("/admin/customers") ||
+    pathname.startsWith("/admin/sellers") ||
+    pathname.startsWith("/admin/products") ||
+    pathname.startsWith("/admin/product-categories");
+
   return (
     <div className="App">
       <ToastContainer position="top-right" autoClose={2000} hideProgressBar />
-      {!isSellerRoute && <Navbar />}
+
+      {!isSellerRoute && !isAdminRoute && <Navbar />}
       <AllRoutes />
-      {!isSellerRoute && <Footer />}
+      {!isSellerRoute && !isAdminRoute && <Footer />}
 
       <ToastContainer
         position="top-right"

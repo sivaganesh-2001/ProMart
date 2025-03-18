@@ -29,9 +29,9 @@ function AllProducts() {
   });
 
   const getDataOnce = async () => {
-    let res = await axios.get("https://zeptojson.onrender.com/Fruits");
-    let data = res.data;
-    setTotalCount(data.length);
+    
+    //let data = res.data;
+    //setTotalCount(data.length);
   };
 
   console.log(totalCount);

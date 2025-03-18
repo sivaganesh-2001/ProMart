@@ -105,6 +105,11 @@ public class ProductController {
         return ResponseEntity.ok(popularProducts);
     }
 
+    @GetMapping("/id")
+    public List<Product> getProductsByIds(@RequestParam List<String> ids) {
+        return productService.getProductsByIds(ids);
+    }
+
     @DeleteMapping("/{productId}/seller/{sellerEmail}")
     public ResponseEntity<?> deleteProduct(
             @PathVariable String productId,

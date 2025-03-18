@@ -11,17 +11,20 @@ const Dashboard = () => {
     products: 0,
     approvedSellers: 0,
     category: 0,
+    productCategories: 0,
+    
   });
 
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        const [customersRes, sellersRes, productsRes, approvedSellersRes, categoryRes] = await Promise.all([
+        const [customersRes, sellersRes, productsRes, approvedSellersRes, categoryRes,  productCategoriesRes,] = await Promise.all([
           axios.get("http://localhost:8081/api/customers/count"),
           axios.get("http://localhost:8081/api/sellers/count"),
           axios.get("http://localhost:8081/api/products/count"),
           axios.get("http://localhost:8081/api/sellers/approve-seller/count"),
           axios.get("http://localhost:8081/api/categories/count"),
+          axios.get("http://localhost:8081/api/product-categories/count"), // Product Categories
         ]);
 
         setCounts({
@@ -30,6 +33,7 @@ const Dashboard = () => {
           products: productsRes.data,
           approvedSellers: approvedSellersRes.data,
           category:categoryRes.data,
+          productCategories: productCategoriesRes.data,
         });
       } catch (error) {
         console.error("Error fetching counts:", error);
@@ -73,6 +77,13 @@ const Dashboard = () => {
           color="bg-pink-500"
           onClick={() => navigate("/admin/categories")}
         />
+                <Card
+          title={`${counts.productCategories} Product Categories`}
+          icon={<FaList />}
+          color="bg-purple-500"
+          onClick={() => navigate("/admin/product-categories")}
+        />
+
       </div>
     </div>
   );

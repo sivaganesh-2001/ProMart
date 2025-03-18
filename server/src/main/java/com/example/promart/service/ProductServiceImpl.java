@@ -57,7 +57,6 @@ public class ProductServiceImpl implements ProductService {
         // Associate product with seller
         seller.getProducts().add(savedProduct);
         sellerRepository.save(seller);
-
         return savedProduct;
     }
 
@@ -86,6 +85,10 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<Product> getPopularProducts() {
         return productRepository.findTop5ByOrderBySoldCountDesc();
+    }
+
+    public List<Product> getProductsByIds(List<String> ids) {
+        return productRepository.findByIdIn(ids);
     }
 
     public boolean deleteProduct(String productId, String sellerEmail) {

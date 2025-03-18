@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -11,12 +11,12 @@ import Footer from "../../components/Footer";
 // Validation Schema using Yup
 const schema = yup.object().shape({
   productName: yup.string().required("Product name is required"),
-  category: yup.string().required("Category is required"),
   brand: yup.string().required("Brand is required"),
   price: yup.number().typeError("Price must be a number").required("Price is required"),
   stock: yup.number().typeError("Stock must be a number").required("Stock is required"),
   unit: yup.string().required("Unit is required"),
-  description: yup.string().nullable(),
+  //netQuantity: yup.string().required("Net Quantity is required"), // New net quantity field
+  description: yup.string().required("Net Quantity is required"),
   image: yup.mixed().required("Image is required"),
 });
 
@@ -24,6 +24,7 @@ const AddProducts = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [categoriesList, setCategoriesList] = useState([]); // State for categories
 
   const {
     register,
@@ -33,25 +34,27 @@ const AddProducts = () => {
     formState: { errors },
   } = useForm({ resolver: yupResolver(schema) });
 
-  // Fetch seller ID by email
-  const fetchSellerIdByEmail = async (email) => {
-    try {
-      const response = await axios.get(`http://localhost:8081/api/sellers/${email}`);
-      console.log(response.data.id);
-      return response.data.id; // Assuming the response contains the seller ID
-    
-    } catch (error) {
-      throw new Error("Failed to fetch seller ID");
-    }
-  };
+  // Fetch product categories from the backend
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get("http://localhost:8081/api/product-categories");
+        setCategoriesList(response.data); // Assuming response.data is an array of ProductCategory objects
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   // Upload image to Firebase and return its URL
   const uploadImageToFirebase = async (file) => {
     return new Promise((resolve, reject) => {
-      const storageRef = ref(storage, `products/${file.name}`);
+      const storageRef = ref(storage, `products/${file.name}`); // Fixed template literal
       const metadata = { contentType: file.type };
       const uploadTask = uploadBytesResumable(storageRef, file, metadata);
-  
+
       uploadTask.on(
         "state_changed",
         (snapshot) => {},
@@ -72,57 +75,68 @@ const AddProducts = () => {
     const file = e.target.files[0];
     if (file) {
       setImagePreview(URL.createObjectURL(file));
-      setValue("image", file, { shouldValidate: true });
+      setValue("image", file, { shouldValidate: true }); // Ensure validation
     } else {
       setImagePreview(null);
     }
   };
+  
 
   // Handle form submission
   const onSubmit = async (data) => {
     setLoading(true);
     setErrorMessage("");
-
+  
     try {
-      if (!data.image) {
-        throw new Error("Please select an image before submitting.");
+      // Check for missing fields (excluding netQuantity)
+      if (
+        !data.productName ||
+        !data.brand ||
+        !data.price ||
+        !data.stock ||
+        !data.unit ||
+        !data.description ||
+        !data.image
+      ) {
+        alert("Please fill in all required fields and upload an image.");
+        setLoading(false);
+        return;
       }
-
+  
       // Upload image to Firebase and get the URL
       const imageUrl = await uploadImageToFirebase(data.image);
       console.log("Image uploaded:", imageUrl);
-
+  
       // Get the seller's email from local storage
       const sellerEmail = localStorage.getItem("sellerEmail");
-    
-      // Fetch the seller ID using the email
-      const sellerId = await fetchSellerIdByEmail(sellerEmail);
+      const sellerRes = await axios.get(`http://localhost:8081/api/sellers/${sellerEmail}`);
+      const sellerId = sellerRes.data.id;
   
-      // Prepare product data with image URL and sellerId
+      // Prepare product data with image URL
       const productData = {
         productName: data.productName,
-        category: data.category,
         brand: data.brand,
         price: parseFloat(data.price),
         stock: parseInt(data.stock),
         unit: data.unit,
         description: data.description || "",
         imageUrl: imageUrl,
-        sellerId: sellerId, // Include sellerId in product data
-        sellerEmail:sellerEmail,
-        soldCount: 0, // Initialize soldCount
-        createdAt: new Date().toISOString(), // Set createdAt to current date
-        totalRevenue: 0, // Initialize totalRevenue
-        averageSellingPrice: parseFloat(data.price), // Set averageSellingPrice to the price
-        customerRetentionRate: 0, // Initialize customerRetentionRate
-        dailySales: {}, // Initialize dailySales as an empty object
+        sellerEmail: sellerEmail,
+        sellerId: sellerId,
+        soldCount: 0,
+        createdAt: new Date().toISOString(),
+        totalRevenue: 0,
+        averageSellingPrice: parseFloat(data.price),
+        customerRetentionRate: 0,
+        dailySales: {},
+        netQuantity: data.netQuantity ? parseInt(data.netQuantity) : undefined, // Allow netQuantity to be optional
       };
-
+  
       console.log("Product data being sent:", productData);
-
+  
       // Send data to backend
-      await axios.post(`http://localhost:8081/api/products/`, productData);
-
+      await axios.post("http://localhost:8081/api/products/", productData);
+  
       alert("Product added successfully!");
       reset();
       setImagePreview(null);
@@ -132,17 +146,17 @@ const AddProducts = () => {
       setLoading(false);
     }
   };
+  
 
   return (
     <MainLayout>
-       {/* Centered Heading */}
-  <div className="w-full flex justify-center mt-6">
-    <h1 className="text-3xl font-bold text-gray-800">Add Product</h1>
-  </div>
+      {/* Centered Heading */}
+      <div className="w-full flex justify-center mt-6">
+        <h1 className="text-3xl font-bold text-gray-800">Add Product</h1>
+      </div>
       <div className="w-full max-w-6xl p-10 bg-white shadow-lg rounded-lg grid grid-cols-3 gap-8">
         {/* Form Section */}
         <div className="col-span-2 ml-10">
-          
           {errorMessage && <p className="text-red-500 mb-4">{errorMessage}</p>}
           <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-2 gap-6">
             <div>
@@ -168,8 +182,10 @@ const AddProducts = () => {
               <select {...register("unit")} className="w-full border rounded-md p-2">
                 <option value="">Select Unit</option>
                 <option value="Piece">Piece</option>
-                <option value="Kg">Kg</option>
-                <option value="Litre">Litre</option>
+                <option value="mg">MilliGram</option>
+                <option value="Kg">KiloGram</option>
+                <option value="ml">MilliLitre</option>
+                <option value="L">Litre</option>
                 <option value="Meter">Meter</option>
                 <option value="Box">Box</option>
               </select>
@@ -177,28 +193,37 @@ const AddProducts = () => {
             </div>
 
             <div>
+              <label className="block text-sm font-medium">Net Quantity *</label>
+              <input  {...register("description")} className="w-full border rounded-md p-2" />
+              <p className="text-red-500 text-xs">{errors.description?.message}</p>
+            </div>
+
+
+
+            {/* <div>
+              <label className="block text-sm font-medium">Net Quantity *</label>
+              <input type="number" {...register("netQuantity")} className="w-full border rounded-md p-2" />
+              <p className="text-red-500 text-xs">{errors.netQuantity?.message}</p>
+            </div> */}
+
+            <div>
               <label className="block text-sm font-medium">Price (₹) *</label>
               <input type="number" {...register("price")} className="w-full border rounded-md p-2" />
               <p className="text-red-500 text-xs">{errors.price?.message}</p>
             </div>
+      
+              
+                {/* <div className="col-span-2">
+            <label className="block text-sm font-medium">Description</label>
+              <textarea {...register("description")} className="w-full border rounded-md p-2" />
+            </div> */}
 
-            <div>
-              <label className="block text-sm font-medium">Category *</label>
-              <select {...register("category")} className="w-full border rounded-md p-2">
-                <option value="">Select Category</option>
-                <option value="Electronics">Electronics</option>
-                <option value="Clothing">Clothing</option>
-                <option value="Groceries">Groceries</option>
-                <option value="Books">Books</option>
-                <option value="Furniture">Furniture</option>
-              </select>
-              <p className="text-red-500 text-xs">{errors.category?.message}</p>
-            </div>
 
-            <div className="col-span-2">
+
+            {/* <div className="col-span-2">
               <label className="block text-sm font-medium">Description</label>
               <textarea {...register("description")} className="w-full border rounded-md p-2" />
-            </div>
+            </div> */}
 
             <div className="col-span-2">
               <button
@@ -225,7 +250,7 @@ const AddProducts = () => {
           )}
         </div>
       </div>
-   
+
     </MainLayout>
   );
 };

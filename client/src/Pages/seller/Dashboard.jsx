@@ -1,107 +1,95 @@
-import React from 'react';
-import MainLayout from "../../components/layouts/SellerLayout"; // Main Layout Wrapper
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-} from 'recharts';
-
-const data = [
-  { name: 'Jan', earnings: 10000 },
-  { name: 'Feb', earnings: 15000 },
-  { name: 'Mar', earnings: 20000 },
-  { name: 'Apr', earnings: 25000 },
-  { name: 'May', earnings: 30000 },
-  { name: 'Jun', earnings: 35000 },
-  { name: 'Jul', earnings: 40000 },
-  { name: 'Aug', earnings: 30000 },
-  { name: 'Sep', earnings: 25000 },
-  { name: 'Oct', earnings: 30000 },
-  { name: 'Nov', earnings: 40000 },
-  { name: 'Dec', earnings: 45000 },
-];
-
-const revenueSourcesData = [
-  { name: 'Direct', value: 400 },
-  { name: 'Social', value: 300 },
-  { name: 'Referral', value: 300 },
-];
+import React, { useEffect, useState } from "react";
+import MainLayout from "../../components/layouts/SellerLayout";
+import EarningsOverviewChart from "./EarningsChart"; // Import the EarningsOverviewChart component
+import RevenueChart from "./RevenueChart"; // Import the new RevenueChart component
+import axios from "axios";
 
 const Dashboard = () => {
+  const [earnings, setEarnings] = useState(0);
+  const [billings, setBillings] = useState(0);
+  const [onlineOrders, setOnlineOrders] = useState(0);
+  const [pendingOrders, setPendingOrders] = useState(0);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const sellerEmail = localStorage.getItem("sellerEmail");
+        if (!sellerEmail) {
+          console.error("Seller email not found in local storage");
+          return;
+        }
+
+        const sellerRes = await axios.get(`http://localhost:8081/api/sellers/${sellerEmail}`);
+        const sellerId = sellerRes.data.id;
+
+        if (!sellerId) {
+          console.error("Seller ID not found");
+          return;
+        }
+
+        // Fetch dashboard data
+        const params = { sellerEmail };
+        const earningsRes = await axios.get("http://localhost:8081/api/dashboard/earnings", { params });
+        const billingsRes = await axios.get("http://localhost:8081/api/dashboard/billings", { params });
+        const onlineOrdersRes = await axios.get("http://localhost:8081/api/dashboard/online-orders", { params });
+
+        // Fetch pending orders using sellerId
+        const pendingOrdersRes = await axios.get("http://localhost:8081/api/dashboard/pending-orders", { params: { sellerId } });
+
+        setEarnings(earningsRes.data.amount);
+        setBillings(billingsRes.data.amount);
+        setOnlineOrders(onlineOrdersRes.data.percentage);
+        setPendingOrders(pendingOrdersRes.data.count);
+      } catch (error) {
+        console.error("Error fetching dashboard data", error.response?.data || error.message);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
   return (
     <MainLayout>
       <div className="container mx-auto p-6 bg-gray-100">
+        {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Earnings Monthly */}
           <div className="bg-white p-4 rounded-lg shadow">
             <h2 className="text-xl font-semibold text-blue-600">Earnings (Monthly)</h2>
-            <p className="text-3xl">₹70,000</p>
-          </div>
-          
-          {/* Earnings Annual */}
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h2 className="text-xl font-semibold text-green-600">Earnings (Annual)</h2>
-            <p className="text-3xl">₹4,15,000</p>
+            <p className="text-3xl">₹{earnings}</p>
           </div>
 
-          {/* Tasks */}
           <div className="bg-white p-4 rounded-lg shadow">
-            <h2 className="text-xl font-semibold text-pink-600 ">Online Orders</h2>
+            <h2 className="text-xl font-semibold text-green-600">Billings (Monthly)</h2>
+            <p className="text-3xl">{billings}</p>
+          </div>
+
+          <div className="bg-white p-4 rounded-lg shadow">
+            <h2 className="text-xl font-semibold text-pink-600">Online Orders</h2>
             <div className="flex items-center">
-              <p className="text-3xl mr-2">65%</p>
+              <p className="text-3xl mr-2">{onlineOrders}%</p>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-blue-500 h-2 rounded-full" style={{ width: '65%' }}></div>
+                <div
+                  className="bg-blue-500 h-2 rounded-full"
+                  style={{ width: `${onlineOrders}%` }}
+                ></div>
               </div>
             </div>
           </div>
 
-          {/* Pending Requests */}
           <div className="bg-white p-4 rounded-lg shadow">
             <h2 className="text-xl font-semibold text-orange-500">Pending Orders</h2>
-            <p className="text-3xl">18</p>
+            <p className="text-3xl">{pendingOrders}</p>
           </div>
         </div>
 
-        {/* Earnings Overview */}
-        <div className="bg-white mt-6 p-4 rounded-lg shadow">
-          <h2 className="text-xl font-semibold">Earnings Overview</h2>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="earnings" stroke="#8884d8" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        {/* Earnings Overview Chart */}
+        <EarningsOverviewChart sellerEmail={localStorage.getItem("sellerEmail")} />
 
-        {/* Revenue Sources */}
-        <div className="bg-white mt-6 p-4 rounded-lg shadow">
-          <h2 className="text-xl font-semibold">Revenue Sources</h2>
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart>
-              <Pie data={revenueSourcesData} innerRadius={40} outerRadius={80} fill="#8884d8">
-                {
-                  revenueSourcesData.map((entry, index) => <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28'][index]} />)
-                }
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+        {/* Revenue Sources Pie Chart */}
+        <RevenueChart />
       </div>
     </MainLayout>
   );
-}
+};
 
 export default Dashboard;

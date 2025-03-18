@@ -40,7 +40,7 @@ public class BillingController {
         try {
             bill.setBillGeneratedTime(LocalDateTime.now());
             BillingOnline savedBill = billingOnlineRepository.save(bill);
-            billingService.updateProductSales(bill.getSellerId(), bill.getItems());
+            // billingService.updateProductSales(bill.getSellerId(), bill.getItems());
             return ResponseEntity.ok(savedBill);
         } catch (Exception e) {
             logger.error("Failed to save online bill for sellerId: {}", bill.getSellerId(), e);
@@ -56,7 +56,7 @@ public class BillingController {
         try {
             bill.setBillGeneratedTime(LocalDateTime.now());
             BillingOffline savedBill = billingOfflineRepository.save(bill);
-            billingService.updateProductSales(bill.getSellerId(), bill.getItems());
+            // billingService.updateProductSales(bill.getSellerId(), bill.getItems());
             return ResponseEntity.ok(savedBill);
         } catch (Exception e) {
             logger.error("Failed to save offline bill for sellerId: {}", bill.getSellerId(), e);

@@ -3,10 +3,12 @@ import axios from "axios";
 
 function Approve() {
   const [shops, setShops] = useState([]);
+  const [categories, setCategories] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    // Fetch pending approvals
     axios
       .get("http://localhost:8081/api/sellers/approvals")
       .then((response) => {
@@ -17,6 +19,18 @@ function Approve() {
         setError("Failed to fetch seller approvals.");
         setLoading(false);
       });
+
+    // Fetch categories and map them by id
+    axios
+      .get("http://localhost:8081/api/categories")
+      .then((response) => {
+        const categoryMap = {};
+        response.data.forEach((category) => {
+          categoryMap[category.id] = category.name;
+        });
+        setCategories(categoryMap);
+      })
+      .catch(() => setError("Failed to fetch categories."));
   }, []);
 
   const handleApproval = (id, status) => {
@@ -42,7 +56,7 @@ function Approve() {
       ) : (
         <div className="w-full max-w-6xl">
           {shops.map((shop) => (
-            <SellerCard key={shop.id} shop={shop} handleApproval={handleApproval} />
+            <SellerCard key={shop.id} shop={shop} categories={categories} handleApproval={handleApproval} />
           ))}
         </div>
       )}
@@ -50,7 +64,10 @@ function Approve() {
   );
 }
 
-const SellerCard = ({ shop, handleApproval }) => {
+const SellerCard = ({ shop, categories, handleApproval }) => {
+  // Convert ObjectIds to category names
+  const categoryNames = shop.categories.map((catId) => categories[catId] || "Unknown");
+
   return (
     <div className="bg-white shadow-md rounded-lg p-6 w-full mb-6">
       <h3 className="text-2xl font-bold text-gray-800">{shop.shopName}</h3>
@@ -60,7 +77,7 @@ const SellerCard = ({ shop, handleApproval }) => {
       <div className="grid grid-cols-2 gap-4 mt-4">
         <p><strong>Phone:</strong> {shop.phone}</p>
         <p><strong>Address:</strong> {shop.address}</p>
-        <p><strong>Categories:</strong> {shop.categories.join(", ")}</p>
+        <p><strong>Categories:</strong> {categoryNames.join(", ")}</p>
         <p><strong>Custom Category:</strong> {shop.customCategory}</p>
         <p><strong>Location:</strong> {shop.location ? `${shop.location.x}, ${shop.location.y}` : "N/A"}</p>
       </div>

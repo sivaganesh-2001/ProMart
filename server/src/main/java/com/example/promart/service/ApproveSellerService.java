@@ -17,6 +17,8 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class ApproveSellerService {
@@ -27,65 +29,69 @@ public class ApproveSellerService {
     @Autowired
     private SellerRepository sellerRepository;
 
+    private static final Logger logger = LoggerFactory.getLogger(ApproveSellerService.class);
 
-public String approveSeller(String sellerId) {
-    Optional<ApproveSeller> optionalSeller = approveSellerRepository.findById(sellerId);
-    
-    if (optionalSeller.isPresent()) {
-        ApproveSeller approveSeller = optionalSeller.get();
-
-        // Convert ApproveSeller to Seller
-        Seller seller = new Seller(
-            approveSeller.getShopName(),
-            approveSeller.getOwnerName(),
-            approveSeller.getEmail(),
-            approveSeller.getPhone(),
-            approveSeller.getAddress(),
-            approveSeller.getCategories(),
-            approveSeller.getCustomCategory(),
-            approveSeller.getPassword(),
-            approveSeller.getShopImageUrl(),
-            approveSeller.getLocation()
-        );
-
-        // Set products
-        seller.setProducts(approveSeller.getProducts());
-
-        // Save to sellers collection
-        sellerRepository.save(seller);
-
-        // Remove from approveSeller collection
-        approveSellerRepository.deleteById(sellerId);
-
-        // Update role in Firestore
-        Firestore db = FirestoreClient.getFirestore();
-        try {
-            // Query Firestore to find the document with matching email
-            CollectionReference usersRef = db.collection("users");
-            Query query = usersRef.whereEqualTo("email", approveSeller.getEmail());
-            ApiFuture<QuerySnapshot> querySnapshot = query.get();
+        public String approveSeller(String sellerId) {
+            Optional<ApproveSeller> optionalSeller = approveSellerRepository.findById(sellerId);
             
-            List<QueryDocumentSnapshot> documents = querySnapshot.get().getDocuments();
-            if (!documents.isEmpty()) {
-                for (QueryDocumentSnapshot document : documents) {
-                    // Update the role field
-                    DocumentReference userRef = document.getReference();
-                    userRef.update("role", "seller").get();
+            if (optionalSeller.isPresent()) {
+                ApproveSeller approveSeller = optionalSeller.get();
+
+                // Convert ApproveSeller to Seller
+                Seller seller = new Seller(
+                    approveSeller.getShopName(),
+                    approveSeller.getOwnerName(),
+                    approveSeller.getEmail(),
+                    approveSeller.getPhone(),
+                    approveSeller.getAddress(),
+                    approveSeller.getCategories(),
+                    approveSeller.getCustomCategory(),
+                    approveSeller.getPassword(),
+                    approveSeller.getShopImageUrl(),
+                    approveSeller.getLocation()
+                );
+
+                // Set products
+                seller.setProducts(approveSeller.getProducts());
+
+                // Save to sellers collection
+                sellerRepository.save(seller);
+
+                // Remove from approveSeller collection
+                approveSellerRepository.deleteById(sellerId);
+
+                // Update role in Firestore
+                Firestore db = FirestoreClient.getFirestore();
+                try {
+                    CollectionReference usersRef = db.collection("users");
+                    Query query = usersRef.whereEqualTo("email", approveSeller.getEmail());
+                    ApiFuture<QuerySnapshot> querySnapshot = query.get();
+                    
+                    List<QueryDocumentSnapshot> documents = querySnapshot.get().getDocuments();
+                    
+                    if (!documents.isEmpty()) {
+                        for (QueryDocumentSnapshot document : documents) {
+                            DocumentReference userRef = document.getReference();
+                            logger.info("Updating role for user: {}", approveSeller.getEmail());
+                            userRef.update("role", "seller").get();  // Blocking call to ensure update completes
+                        }
+                        logger.info("Firestore role updated successfully for seller: {}", approveSeller.getEmail());
+                        return "Seller approved successfully!";
+                    } else {
+                        logger.warn("Seller approved, but no matching Firestore user found for email: {}", approveSeller.getEmail());
+                        return "Seller approved, but user not found in Firestore!";
+                    }
+                } catch (InterruptedException | ExecutionException e) {
+                    logger.error("Error updating Firestore role", e);
+                    return "Seller approved, but failed to update role in Firestore!";
                 }
-                return "Seller approved successfully!";
             } else {
-                return "Seller approved, but user not found in Firestore!";
+                logger.warn("Seller ID {} not found!", sellerId);
+                return "Seller not found!";
             }
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-            return "Seller approved, but failed to update role in Firestore!";
         }
-    } else {
-        return "Seller not found!";
-    }
-}
-    
-public String rejectSeller(String sellerId) {
+        
+    public String rejectSeller(String sellerId) {
         if (approveSellerRepository.existsById(sellerId)) {
             approveSellerRepository.deleteById(sellerId);
             return "Seller rejected successfully!";

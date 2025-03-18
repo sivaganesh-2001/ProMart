@@ -1,31 +1,21 @@
 package com.example.promart.model;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class ProductSalesData {
-
-    private String sellerId;
-    private String monthYear;
     private String productId;
-    private String productName;
-    private int totalQuantitySold;
-    private double totalRevenue;
-    private LocalDate saleDate;
-    
-    // Constructors
-    public ProductSalesData() {}
+    private int totalSoldQuantity;
+    private String sellerId; // Ensure this exists
+    private LocalDateTime saleDate;
 
-    public ProductSalesData(String sellerId, String monthYear, String productId, String productName, int totalQuantitySold, double totalRevenue, LocalDate saleDate) {
-        this.sellerId = sellerId;
-        this.monthYear = monthYear;
-        this.productId = productId;
-        this.productName = productName;
-        this.totalQuantitySold = totalQuantitySold;
-        this.totalRevenue = totalRevenue;
+    public LocalDateTime getSaleDate() {
+        return saleDate;
+    }
+
+    public void setSaleDate(LocalDateTime saleDate) {
         this.saleDate = saleDate;
     }
 
-    // Getters and Setters
     public String getSellerId() {
         return sellerId;
     }
@@ -34,51 +24,18 @@ public class ProductSalesData {
         this.sellerId = sellerId;
     }
 
-    public String getMonthYear() {
-        return monthYear;
-    }
+    // Constructors
+    public ProductSalesData() {}
 
-    public void setMonthYear(String monthYear) {
-        this.monthYear = monthYear;
-    }
-
-    public String getProductId() {
-        return productId;
-    }
-
-    public void setProductId(String productId) {
+    public ProductSalesData(String productId, int totalSoldQuantity) {
         this.productId = productId;
+        this.totalSoldQuantity = totalSoldQuantity;
     }
 
-    public String getProductName() {
-        return productName;
-    }
+    // Getters and Setters
+    public String getProductId() { return productId; }
+    public void setProductId(String productId) { this.productId = productId; }
 
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
-
-    public int getTotalQuantitySold() {
-        return totalQuantitySold;
-    }
-
-    public void setTotalQuantitySold(int totalQuantitySold) {
-        this.totalQuantitySold = totalQuantitySold;
-    }
-
-    public double getTotalRevenue() {
-        return totalRevenue;
-    }
-
-    public void setTotalRevenue(double totalRevenue) {
-        this.totalRevenue = totalRevenue;
-    }
-
-    public LocalDate getSaleDate() {
-        return saleDate;
-    }
-
-    public void setSaleDate(LocalDate saleDate) {
-        this.saleDate = saleDate;
-    }
+    public int getTotalSoldQuantity() { return totalSoldQuantity; }
+    public void setTotalSoldQuantity(int totalSoldQuantity) { this.totalSoldQuantity = totalSoldQuantity; }
 }

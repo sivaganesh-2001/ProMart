@@ -12,7 +12,7 @@ export default function Topbar({ pageTitle }) {
   const [showLogout, setShowLogout] = useState(false);
 
   const sellerEmail = localStorage.getItem("sellerEmail");
-  const GOOGLE_MAPS_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY"; // Replace with your actual API key
+  const GOOGLE_MAPS_API_KEY = "AIzaSyAiEvhHmhIdeKSVUF2DqUEVKdWi3LOOjIw"; // Replace with your actual API key
 
   useEffect(() => {
     const fetchShopDetails = async () => {
@@ -106,10 +106,10 @@ export default function Topbar({ pageTitle }) {
         {showDropdown && (
           <div className="absolute right-0 mt-40 w-[160px] bg-white shadow-lg rounded-lg py-2">
             {/* Profile Info */}
-            <div className="flex items-center px-4 py-2 border-b">
+            {/* <div className="flex items-center px-4 py-2 border-b">
               <FaUserCircle className="text-gray-600 text-xl mr-2" />
               <span className="text-gray-700 font-medium">Profile</span>
-            </div>
+            </div> */}
 
             {/* Sign Out Button */}
             <button

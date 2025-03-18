@@ -13,7 +13,7 @@ const SellerRegistration = () => {
     email: "",
     phone: "",
     address: "",
-    categories: [], // Store selected category names
+    categories: [], // Store selected category IDs
     customCategory: "",
     password: "",
     confirmPassword: "",
@@ -69,21 +69,32 @@ const SellerRegistration = () => {
     }
   };
 
-  const handleCategoryChange = (categoryName) => {
-    let updatedCategories = [...formData.categories];
+  const handleCategoryChange = (categoryId) => {
+    setFormData((prev) => {
+      const isSelected = prev.categories.includes(categoryId);
+      let updatedCategories;
 
-    if (updatedCategories.includes(categoryName)) {
-      updatedCategories = updatedCategories.filter((cat) => cat !== categoryName);
-    } else {
-      if (updatedCategories.length < 3) {
-        updatedCategories.push(categoryName);
+      if (isSelected) {
+        // Remove category if already selected
+        updatedCategories = prev.categories.filter((id) => id !== categoryId);
       } else {
-        alert("You can select up to 3 categories only.");
-        return;
+        // Check if "Other" is selected
+        if (categoryId === "other") {
+          updatedCategories = [...prev.categories, categoryId];
+        } else if (prev.categories.length < 3) {
+          // Only add if less than 3 categories are selected
+          updatedCategories = [...prev.categories, categoryId];
+        } else {
+          alert("You can only select up to 3 categories.");
+          return prev; // Do nothing if already 3 categories are selected
+        }
       }
-    }
 
-    setFormData({ ...formData, categories: updatedCategories });
+      return {
+        ...prev,
+        categories: updatedCategories,
+      };
+    });
   };
 
   const uploadImageToFirebase = async (file) => {
@@ -137,7 +148,7 @@ const SellerRegistration = () => {
         email: formData.email,
         phone: formData.phone,
         address: formData.address,
-        categories: formData.categories, // Ensure categories is an array of category names
+        categories: formData.categories, // Ensure categories is an array of category IDs
         shopImageUrl: imageUrl,
         location: { x: formData.longitude, y: formData.latitude },
       };
@@ -161,7 +172,7 @@ const SellerRegistration = () => {
 
         // Use a geocoding API (for example, Google Maps API) to get the address from coordinates
         fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=AIzaSyAiEvhHmhIdeKSVUF2DqUEVKdWi3LOOjIw`
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=AIzaSyAiEvhHmhIdeKSVUF2DqUEVKdWi3LOOjIw  `
         )
           .then((response) => response.json())
           .then((data) => {
@@ -284,31 +295,60 @@ const SellerRegistration = () => {
             rows="3"
             required
           />
-          {showMap && (
-  <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center">
-    <LocationPicker setShowMap={setShowMap} setFormData={setFormData} />
-  </div>
-)}
         </div>
 
+        {/* Categories Selection */}
         <div className="relative">
           <label className="block">Categories</label>
-          <div className="relative border p-2 rounded-md flex justify-between items-center cursor-pointer" onClick={() => setDropdownOpen(!dropdownOpen)}>
-            <span>{formData.categories.length > 0 ? formData.categories.join(", ") : "Select Categories"}</span>
+          <div
+            className="relative border p-2 rounded-md flex justify-between items-center cursor-pointer"
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+          >
+            <span>
+              {formData.categories.length > 0
+                ? categoriesList
+                    .filter((cat) => formData.categories.includes(cat.id)) // Use category.id
+                    .map((cat) => cat.name)
+                    .join(", ") + (formData.categories.includes("other") ? ", Other" : "")
+                : "Select Categories"}
+            </span>
             <FaChevronDown className={`transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
           </div>
 
           {dropdownOpen && (
             <div className="absolute left-0 w-full bg-white border rounded-md shadow-md mt-1 max-h-48 overflow-y-auto z-10">
               {categoriesList.map((category) => (
-                <label key={category._id} className="flex items-center space-x-2 p-2 hover:bg-gray-100 cursor-pointer">
-                  <input type="checkbox" checked={formData.categories.includes(category.name)} onChange={() => handleCategoryChange(category.name)} />
+                <label
+                  key={category.id} // Use category.id
+                  className="flex items-center space-x-2 p-2 hover:bg-gray-100 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.categories.includes(category.id)} // Use category.id
+                    onChange={() => handleCategoryChange(category.id)} // Use category.id
+                  />
                   <span>{category.name}</span>
                 </label>
               ))}
+              {/* Add the "Other" option */}
+              <label className="flex items-center space-x-2 p-2 hover:bg-gray-100 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.categories.includes("other")} // Check if "Other" is selected
+                  onChange={() => handleCategoryChange("other")} // Handle "Other" selection
+                />
+                <span>Other</span>
+              </label>
             </div>
           )}
         </div>
+
+        {/* Map Picker */}
+        {showMap && (
+          <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center">
+            <LocationPicker setShowMap={setShowMap} setFormData={setFormData} />
+          </div>
+        )}
 
         <button
           type="submit"

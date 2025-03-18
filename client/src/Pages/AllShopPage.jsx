@@ -5,6 +5,7 @@ import axios from "axios";
 
 const AllShopsPage = () => {
   const [shops, setShops] = useState([]);
+  const [categories, setCategories] = useState({});
   const [userLocation, setUserLocation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sortType, setSortType] = useState("distance");
@@ -35,12 +36,30 @@ const AllShopsPage = () => {
     }
   }, []);
 
+    // Fetch categories
+    useEffect(() => {
+      fetchCategories();
+    }, []);
+
   // Fetch nearby shops once location is available
   useEffect(() => {
     if (userLocation) {
       fetchNearbyShops(userLocation.latitude, userLocation.longitude);
     }
   }, [userLocation]);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get("http://localhost:8081/api/categories");
+      const categoryMap = response.data.reduce((acc, category) => {
+        acc[category.id] = category.name;
+        return acc;
+      }, {});
+      setCategories(categoryMap);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
 
   const fetchNearbyShops = async (latitude, longitude) => {
     try {
@@ -201,7 +220,10 @@ const AllShopsPage = () => {
           >
             <img src={shop.shopImageUrl} alt={shop.shopName} className="w-full h-40 object-cover rounded-md" />
             <h3 className="mt-2 font-semibold">{shop.shopName}</h3>
-            <p className="text-gray-600">Category: {shop.categories.join(", ")}</p>
+            {/* <p className="text-gray-600">Category: {shop.categories.join(", ")}</p> */}
+            <p className="text-gray-600">
+              <strong>Category:</strong> {shop.categories.map((id) => categories[id]).filter(Boolean).join(", ") || "N/A"}
+            </p>
             <p className="text-gray-600">Rating: ⭐ {shop.rating.toFixed(1)}</p>
             <p className="text-gray-600">Distance: {shop.distance.toFixed(2)} km</p>
           </div>

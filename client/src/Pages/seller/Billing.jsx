@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { FaTrash } from "react-icons/fa";
 import axios from "axios";
-import MainLayout from "../../components/layouts/SellerLayout";
+import SellerLayout from "../../components/layouts/SellerLayout";
 import Footer from "../../components/Footer";
 import debounce from "lodash.debounce";
+import { jsPDF } from "jspdf";
 
 const BillingPage = () => {
   const [customer, setCustomer] = useState({ name: "", mobile: "" });
@@ -24,9 +25,10 @@ const BillingPage = () => {
   const [newProduct, setNewProduct] = useState({
     productName: "",
     price: "",
-    quantity: 1,
+    quantity: 0,
     stock: 0,
     id: "", // Add an id field to store the actual product ID
+    brand: "", // Add a brand field
   });
   const sellerEmail = localStorage.getItem("sellerEmail");
   const [shopId, setShopId] = useState(null);
@@ -46,16 +48,25 @@ const BillingPage = () => {
       return; 
     }
 
+    if (newProduct.stock <= 0) {
+      alert("Stock count is zero."); // Alert if stock is zero
+      return;
+    }
+
+    // Create a unique id for the product instance
+    const uniqueId = `${newProduct.id}-${Date.now()}`;
+
     setProducts((prevProducts) => [
       ...prevProducts,
       {
         ...newProduct,
         price: parseFloat(newProduct.price) || 0,
         quantity: parseFloat(newProduct.quantity) || 1,
+        uniqueId, // Add uniqueId to the product
       },
     ]);
 
-    setNewProduct({ productName: "", price: "", quantity: 1, stock: 0, id: "" }); // Reset id
+    setNewProduct({ productName: "", price: "", quantity: 1, stock: 0, id: "", brand: "" }); // Reset id and brand
     productNameRef.current?.focus();
   };
 
@@ -100,12 +111,47 @@ const BillingPage = () => {
   
       // Clear products after successful order
       setProducts([]);
+      generatePDF(billData);
     } catch (error) {
       console.error("Error:", error);
       alert("Failed to generate bill: " + error.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const generatePDF = (billData) => {
+    const doc = new jsPDF();
+
+    // Add title
+    doc.setFontSize(20);
+    doc.text("Bill", 14, 22);
+
+    // Add customer details
+    doc.setFontSize(12);
+    doc.text(`Customer Name: ${billData.customer}`, 14, 40);
+    doc.text(`Mobile No: ${billData.phone}`, 14, 50);
+    doc.text(`Order Date: ${billData.orderDate}`, 14, 60);
+
+    // Add product details
+    doc.text("Products:", 14, 80);
+    let y = 90;
+    products.forEach((product, index) => {
+      doc.text(`${index + 1}. ${product.productName} (${product.brand}) - ₹${product.price.toFixed(2)} x ${product.quantity}`, 14, y);
+      y += 10;
+    });
+
+    // Add totals
+    doc.text(`Total MRP: ₹${subtotal.toFixed(2)}`, 14, y);
+    y += 10;
+    doc.text(`Discount (${discount}%): - ₹${discountAmount.toFixed(2)}`, 14, y);
+    y += 10;
+    doc.text(`Tax (${tax}%): + ₹${taxAmount.toFixed(2)}`, 14, y);
+    y += 10;
+    doc.text(`Final Total: ₹${finalTotal.toFixed(2)}`, 14, y);
+
+    // Save the PDF
+    doc.save(`bill_${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
   // Fetch shop ID based on seller email
@@ -187,6 +233,7 @@ const BillingPage = () => {
       quantity: 1,
       stock: product.stock,
       id: product.id, // Set the actual product ID
+      brand: product.brand, // Set the brand name
     });
     setSuggestions([]);
   };
@@ -194,15 +241,15 @@ const BillingPage = () => {
   const updateQuantity = (id, qty) => {
     setProducts((prevProducts) =>
       prevProducts.map((p) =>
-        p.id === id
+        p.uniqueId === id
           ? { ...p, quantity: isNaN(parseFloat(qty)) ? 1 : parseFloat(qty) }
           : p
       )
     );
   };
 
-  const removeProduct = (id) => {
-    setProducts((prevProducts) => prevProducts.filter((p) => p.id !== id));
+  const removeProduct = (uniqueId) => {
+    setProducts((prevProducts) => prevProducts.filter((p) => p.uniqueId !== uniqueId));
   };
 
   const subtotal = products.reduce((acc, p) => acc + p.price * p.quantity, 0);
@@ -211,7 +258,7 @@ const BillingPage = () => {
   const finalTotal = subtotal - discountAmount + taxAmount;
 
   return (
-    <MainLayout>
+    <SellerLayout>
       <div className="w-full max-w-6xl mx-auto p-6 bg-white shadow-lg rounded-lg">
         <div className="p-6 max-w-4xl mx-auto bg-white shadow-lg rounded-lg">
           <h2 className="text-3xl font-bold text-center mb-6">Billing System - Promart</h2>
@@ -259,14 +306,14 @@ const BillingPage = () => {
               </thead>
               <tbody>
                 {products.map((p, index) => (
-                  <tr key={p.id} className="border">
+                  <tr key={p.uniqueId} className="border">
                     <td className="p-3">{index + 1}</td>
-                    <td className="p-3">{p.productName}</td>
+                    <td className="p-3">{p.productName} ({p.brand})</td>
                     <td className="p-3">₹{p.price.toFixed(2)}</td>
                     <td className="p-3">{p.quantity}</td>
                     <td className="p-3">₹{(p.price * p.quantity).toFixed(2)}</td>
                     <td className="p-3">
-                      <button onClick={() => removeProduct(p.id)} className="text-red-500">
+                      <button onClick={() => removeProduct(p.uniqueId)} className="text-red-500">
                         <FaTrash />
                       </button>
                     </td>
@@ -343,7 +390,7 @@ const BillingPage = () => {
                   className="p-2 cursor-pointer hover:bg-gray-200"
                   onClick={() => selectProduct(item)}
                 >
-                  {item.productName} - ₹{item.price}
+                  {item.productName} ({item.brand}) - ₹{item.price}
                 </li>
               ))}
             </ul>
@@ -403,8 +450,8 @@ const BillingPage = () => {
           </button>
         </div>
       </div>
-  
-    </MainLayout>
+      <Footer />
+    </SellerLayout>
   );
 };
 

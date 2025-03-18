@@ -81,17 +81,19 @@ public class AnalyticsController {
     }
 
 
+    @GetMapping("/slow-moving")
+    public List<ProductSalesData> getSlowMovingProducts(@RequestParam String sellerId) {
+        salesSummaryService.analyzeSalesData(sellerId); // Trigger analysis
+        return salesSummaryService.getSlowMovingProducts(sellerId);
+    }
+    
     @GetMapping("/fast-moving")
     public List<ProductSalesData> getFastMovingProducts(@RequestParam String sellerId) {
+        salesSummaryService.analyzeSalesData(sellerId); // Trigger analysis
         return salesSummaryService.getFastMovingProducts(sellerId);
     }
 
-    // Endpoint for Slow Moving Products
-    @GetMapping("/slow-moving")
-    public List<ProductSalesData> getSlowMovingProducts(@RequestParam String sellerId) {
-        return salesSummaryService.getSlowMovingProducts(sellerId);
-    }
-
+    
     @GetMapping("/status-count")
     public Map<String, Long> getOrderStatusCount(@RequestParam String sellerId) {
         return orderAnalyticsService.getOrderStatusCountForLastWeek(sellerId);

@@ -51,6 +51,7 @@ import Category from '../Pages/admin/Category';
 import Customer from '../Pages/admin/Customers';
 import Seller from '../Pages/admin/Sellers';
 import Product from '../Pages/admin/Product'
+import ProductCategoryPage from '../Pages/admin/ProductCategory';
 function AllRoutes() {
   return (
     <Routes>
@@ -117,6 +118,7 @@ function AllRoutes() {
         <Route path="/admin/customers" element={<Customer />} />
         <Route path="/admin/sellers" element={<Seller />} />
         <Route path="/admin/products" element={<Product />} />
+        <Route path="/admin/product-categories" element={<ProductCategoryPage />} />
       </Route>
 
       {/* Redirect unknown seller routes */}

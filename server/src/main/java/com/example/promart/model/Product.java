@@ -25,7 +25,6 @@ public class Product {
     @DBRef
     private String sellerEmail;
     private int soldCount;
-
     // New Fields for Analytics
     private LocalDateTime createdAt;
     private LocalDateTime lastSoldAt;
@@ -169,6 +168,7 @@ public class Product {
         this.category = category;
         this.brand = brand;
         this.price = price;
+        //this.sellerId=sellerId;
         this.stock = stock;
         this.unit = unit;
         this.description = description;

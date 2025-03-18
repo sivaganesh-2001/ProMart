@@ -2,7 +2,6 @@ import carousalone from "./carousalone.webp"
 import carousaltwo from "./carousaltwo.webp"
 import carousalthree from "./carousalthree.webp"
 import carousalfour from "./carousalfour.webp"
-import carousalfive from "./carousalfive.webp"
 import carousalsix from "./carousalsix.webp"
 import carousalseven from "./carousalseven.webp"
 import ebgrocery from "./ebgrocery.webp"
@@ -29,4 +28,4 @@ import ebcbreakfast from "./ebcbreakfast.webp"
 import ebcdairy from "./ebcdairy.webp"
 
 
-export {carousalone, carousaltwo, carousalthree, carousalfour, carousalfive, carousalsix, carousalseven, ebgrocery, ebcfruitsandvege, ebcpackagedfood, ebcfrozenfood, ebcmasala, ebcsweet, ebcpaan, ebcbath, ebcbiscuits, ebcbreakfast, ebccleaning, ebccolddrink, ebcdairy, ebcelectricals, ebchealth, ebchomegrown, ebchomeneeds, ebchygiene, ebcmakeup, ebcmeat, ebcmuni, ebctea};
+export {carousalone, carousaltwo, carousalthree, carousalfour, carousalsix, carousalseven, ebgrocery, ebcfruitsandvege, ebcpackagedfood, ebcfrozenfood, ebcmasala, ebcsweet, ebcpaan, ebcbath, ebcbiscuits, ebcbreakfast, ebccleaning, ebccolddrink, ebcdairy, ebcelectricals, ebchealth, ebchomegrown, ebchomeneeds, ebchygiene, ebcmakeup, ebcmeat, ebcmuni, ebctea};
