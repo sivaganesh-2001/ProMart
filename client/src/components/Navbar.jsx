@@ -3,24 +3,23 @@ import { BsBag, BsSearch } from "react-icons/bs";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import axios from "axios";
-import ProductSearchBar from "./ProductSearchBar"; // Import the ProductSearchBar component
+import ProductSearchBar from "./ProductSearchBar";
+import LocationPicker from "../components/seller/LocationPickerNavbar";
 
-const GOOGLE_MAPS_API_KEY = "AIzaSyAiEvhHmhIdeKSVUF2DqUEVKdWi3LOOjIw"; 
+const GOOGLE_MAPS_API_KEY = "AIzaSyAiEvhHmhIdeKSVUF2DqUEVKdWi3LOOjIw";
 
 const Navbar = () => {
-  const [currentCity, setCurrentCity] = useState("Fetching...");
+  const [currentArea, setCurrentArea] = useState("Fetching...");
   const [locationFetched, setLocationFetched] = useState(false);
-  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [isLocationOptionsOpen, setIsLocationOptionsOpen] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
-  const [cartCount, setCartCount] = useState(0); 
+  const [cartCount, setCartCount] = useState(0);
 
-  const userData = useSelector((store) => store.userAuthReducer.user); // Get user data from redux store
-  const cartItems = useSelector((store) => store.cartReducer.cart); // Get cart data from redux store
+  const userData = useSelector((store) => store.userAuthReducer.user);
+  const cartItems = useSelector((store) => store.cartReducer.cart);
+  const customerEmail = localStorage.getItem("customerEmail");
 
-  const customerEmail = localStorage.getItem("customerEmail"); // Get sellerEmail from localStorage
-
-  // Fetch current location (auto-detected)
   const fetchLocation = async () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -39,103 +38,108 @@ const Navbar = () => {
 
             const results = response.data.results;
             if (results.length > 0) {
-              const cityComponent = results[0].address_components.find((component) =>
-                component.types.includes("locality")
+              const areaComponent = results[0].address_components.find((component) =>
+                component.types.includes("sublocality") || component.types.includes("locality")
               );
-              
-              const detectedCity = cityComponent?.long_name || "Unknown City";
-              setCurrentCity(detectedCity);
-              localStorage.setItem("userLocation", detectedCity);
+              const detectedArea = areaComponent?.long_name || "Unknown Area";
+              setCurrentArea(detectedArea);
+              localStorage.setItem("userLocation", detectedArea);
+              localStorage.setItem("userCoordinates", JSON.stringify({ latitude, longitude }));
+              window.dispatchEvent(new Event("userCoordinatesUpdated")); // Dispatch custom event
             } else {
-              setCurrentCity("Location Not Found");
+              setCurrentArea("Location Not Found");
             }
           } catch (error) {
-            console.error("Error fetching city:", error.message);
-            setCurrentCity("Error Fetching Location");
+            console.error("Error fetching area:", error.message);
+            setCurrentArea("Error Fetching Location");
           } finally {
             setLocationFetched(true);
           }
         },
         (error) => {
           console.error("Error fetching location:", error.message);
-          setCurrentCity("Permission Denied");
+          setCurrentArea("Permission Denied");
           setLocationFetched(true);
         }
       );
     } else {
-      setCurrentCity("Geolocation Not Supported");
+      setCurrentArea("Geolocation Not Supported");
       setLocationFetched(true);
     }
   };
 
-  // Fetch current location when the component mounts
   useEffect(() => {
     fetchLocation();
   }, []);
 
-  // Fetch cart count from backend when user is logged in
   useEffect(() => {
     if (customerEmail) {
       const fetchCartCount = async () => {
         if (!customerEmail) return;
-    
         try {
           const response = await axios.get("http://localhost:8081/api/cart/count", {
             params: { userId: customerEmail },
           });
-          setCartCount(response.data); // Update state with cart count from backend
+          setCartCount(response.data);
         } catch (error) {
           console.error("Error fetching cart count:", error);
         }
       };
-
       fetchCartCount();
     }
   }, [customerEmail]);
 
-  // Watch for cartItems in Redux and update cart count dynamically
   useEffect(() => {
-    setCartCount(cartItems.length); // Assuming `cartItems` is an array of products
+    setCartCount(cartItems.length);
   }, [cartItems]);
 
-  // Handle selecting a location from the search results
-  const handleLocationSelect = async (placeId) => {
+  const extractAreaName = async (latitude, longitude) => {
     try {
       const response = await axios.get(
-        `https://maps.googleapis.com/maps/api/place/details/json`,
+        `https://maps.googleapis.com/maps/api/geocode/json`,
         {
           params: {
-            place_id: placeId,
+            latlng: `${latitude},${longitude}`,
             key: GOOGLE_MAPS_API_KEY,
           },
         }
       );
 
-      const locationName = response.data.result.formatted_address;
-      setCurrentCity(locationName);
-      localStorage.setItem("userLocation", locationName);
-      setIsLocationModalOpen(false);
+      const results = response.data.results;
+      if (results.length > 0) {
+        const areaComponent = results[0].address_components.find((component) =>
+          component.types.includes("sublocality") || component.types.includes("locality")
+        );
+        return areaComponent?.long_name || "Unknown Area";
+      }
+      return "Location Not Found";
     } catch (error) {
-      console.error("Error fetching location details:", error);
+      console.error("Error extracting area name:", error.message);
+      return "Error Fetching Location";
     }
   };
 
+  const handleLocationSelect = async (data) => {
+    const { latitude, longitude } = data;
+    const areaName = await extractAreaName(latitude, longitude);
+    setCurrentArea(areaName);
+    localStorage.setItem("userLocation", areaName);
+    localStorage.setItem("userCoordinates", JSON.stringify({ latitude, longitude }));
+    window.dispatchEvent(new Event("userCoordinatesUpdated")); // Dispatch custom event
+    setLocationFetched(true);
+    setShowLocationPicker(false);
+  };
+
   const getRedirectPath = () => {
-    if (localStorage.getItem("customerEmail")) {
-      return "/";
-    } else if (localStorage.getItem("adminEmail")) {
-      return "/admin-dashboard";
-    } else if (localStorage.getItem("sellerEmail")) {
-      return "/dashboard";
-    } else {
-      return "/"; // Default path if no email key exists
-    }
+    if (localStorage.getItem("customerEmail")) return "/";
+    if (localStorage.getItem("adminEmail")) return "/admin-dashboard";
+    if (localStorage.getItem("sellerEmail")) return "/dashboard";
+    return "/";
   };
 
   return (
     <>
       <div className="bg-[#019875] flex flex-row h-[80px] w-[100%] items-center justify-around md:justify-evenly">
-        {/* Left Section */}
         <div className="flex flex-row items-center justify-evenly">
           <Link to={getRedirectPath()}>
             <h2 className="text-white font-semibold text-[13px] md:text-[16px] lg:text-[20px] ml-4">
@@ -145,20 +149,16 @@ const Navbar = () => {
           <div className="h-[30px] w-[3px] bg-[#c6c6c6b8] rounded-xl ml-4"></div>
           <h2
             className="text-white font-semibold text-[13px] md:text-[16px] lg:text-[20px] ml-4 cursor-pointer"
-            onClick={() => setIsLocationModalOpen(!isLocationModalOpen)}
+            onClick={() => setIsLocationOptionsOpen(!isLocationOptionsOpen)}
           >
-            {currentCity}
+            {currentArea}
           </h2>
         </div>
-
-        {/* Product Search Bar */}
-        <ProductSearchBar 
-          searchQuery={searchQuery} 
-          setSearchQuery={setSearchQuery} 
-          locationFetched={locationFetched} 
+        <ProductSearchBar
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          locationFetched={locationFetched}
         />
-
-        {/* User Actions */}
         {!userData ? (
           <Link to="/login" className="text-white font-semibold hidden sm:flex">
             Login
@@ -168,7 +168,6 @@ const Navbar = () => {
             My Account
           </Link>
         )}
-
         <Link to="/cart">
           <button
             className={`hidden sm:flex bg-[#FF3269] text-white text-[13px] md:text-[16px] font-semibold px-4 md:px-9 rounded-lg lg:flex mr-10 h-[60px] items-center justify-center ${
@@ -182,46 +181,39 @@ const Navbar = () => {
         </Link>
       </div>
 
-      {/* Location Modal */}
-      {isLocationModalOpen && (
+      {isLocationOptionsOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-[90%] md:w-[50%]">
-            <h2 className="text-lg font-bold mb-4">Select Your Location</h2>
+            <h2 className="text-lg font-bold mb-4">Location Options</h2>
             <div className="flex flex-col gap-4">
-              {/* Use Current Location */}
-              <button className="bg-[#019875] text-white py-2 px-4 rounded-lg" onClick={fetchLocation}>
+              <button
+                className="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600"
+                onClick={() => {
+                  fetchLocation();
+                  setIsLocationOptionsOpen(false);
+                }}
+              >
                 Use Current Location
               </button>
-
-              {/* Search Bar for Manual Location */}
-              <input
-                type="text"
-                placeholder="Search for another location"
-                className="border border-gray-300 rounded-lg px-4 py-2"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  //fetchLocationSuggestions(e.target.value);
+              <button
+                className="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600"
+                onClick={() => {
+                  setShowLocationPicker(true);
+                  setIsLocationOptionsOpen(false);
                 }}
-              />
-
-              {/* Search Suggestions */}
-              {suggestions.length > 0 && (
-                <ul className="bg-white border border-gray-300 rounded-lg shadow-md">
-                  {suggestions.map((suggestion) => (
-                    <li
-                      key={suggestion.place_id}
-                      className="p-2 cursor-pointer hover:bg-gray-200"
-                      onClick={() => handleLocationSelect(suggestion.place_id)}
-                    >
-                      {suggestion.description}
-                    </li>
-                  ))}
-                </ul>
-              )}
+              >
+                Select Location
+              </button>
             </div>
           </div>
         </div>
+      )}
+
+      {showLocationPicker && (
+        <LocationPicker
+          setShowMap={setShowLocationPicker}
+          setFormData={handleLocationSelect}
+        />
       )}
     </>
   );

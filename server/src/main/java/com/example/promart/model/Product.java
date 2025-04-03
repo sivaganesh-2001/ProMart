@@ -20,8 +20,18 @@ public class Product {
     private int stock;
     private String unit;
     private String description;
+    private String netQuantity;
+    // New fields for top category and product category
+    private String topCategory; // ID of the top category
+    private String productCategory; // ID of the product category
+
+
     private String imageUrl;
     private String sellerId;
+   // private String masterProductId;  // New Field to Link Master Product
+
+
+
     @DBRef
     private String sellerEmail;
     private int soldCount;
@@ -80,6 +90,22 @@ public class Product {
     public void setStock(int stock) {
         this.stock = stock;
     }
+
+    public String getNetQuantity() {
+        return netQuantity;
+    }
+
+    public void setNetQuantity(String netQuantity) {
+        this.netQuantity = netQuantity;
+    }
+
+    // public String getMasterProductId() {
+    //     return masterProductId;
+    // }
+
+    // public void setMasterProductId(String masterProductId) {
+    //     this.masterProductId = masterProductId;
+    // }
 
     public String getUnit() {
         return unit;
@@ -163,11 +189,12 @@ public class Product {
 
     // Constructors
     public Product(String productName, String category, String brand, double price, int stock, String unit,
-            String description, String imageUrl) {
+            String netQuantity, String imageUrl, String description, String topCategory, String productCategory) {
         this.productName = productName;
         this.category = category;
         this.brand = brand;
         this.price = price;
+        this.netQuantity=netQuantity;
         //this.sellerId=sellerId;
         this.stock = stock;
         this.unit = unit;
@@ -178,6 +205,9 @@ public class Product {
         this.totalRevenue = 0;
         this.averageSellingPrice = price;
         this.customerRetentionRate = 0;
+        this.topCategory = topCategory; // Set top category
+        this.productCategory = productCategory; // Set product category
+    
         this.dailySales = new HashMap<>();
     }
 
@@ -192,7 +222,6 @@ public class Product {
             this.soldCount += quantity;
             this.totalRevenue += quantity * sellingPrice;
             this.lastSoldAt = LocalDateTime.now();
-            
             // Update daily sales record
             String today = LocalDateTime.now().toLocalDate().toString();
             this.dailySales.put(today, this.dailySales.getOrDefault(today, 0) + quantity);

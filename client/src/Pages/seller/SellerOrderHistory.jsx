@@ -16,17 +16,66 @@ const OrderHistory = () => {
     fetchOrders();
   }, [sellerEmail]);
 
-  const fetchOrders = () => {
-    fetch(`http://localhost:8081/api/order-history/seller/${sellerEmail}`)
-      .then((res) => res.json())
-      .then((data) => {
-        const completedOrders = data.filter(
-          (order) => order.status === "Delivered" || order.status === "Cancelled"
-        );
-        setOrders(completedOrders);
-        setFilteredOrders(completedOrders);
-      })
-      .catch((error) => console.error("Error fetching orders:", error));
+  const fetchProduct = async (productId) => {
+    try {
+      console.log('Fetching product with ID:', productId);
+      const response = await fetch(`http://localhost:8081/api/products/${productId}`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const productData = await response.json();
+      console.log('Product data received:', productData);
+      return productData;
+    } catch (error) {
+      console.error("Error fetching product:", error);
+      return null;
+    }
+  };
+
+  const fetchOrders = async () => {
+    try {
+      const res = await fetch(`http://localhost:8081/api/order-history/seller/${sellerEmail}`);
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      const orderData = await res.json();
+      console.log("Order History API response:", orderData);
+
+      const completedOrders = orderData.filter(
+        (order) => order.status === "Delivered" || order.status === "Cancelled"
+      );
+
+      // Fetch product information for all items
+      const allProductIds = completedOrders
+        .flatMap(order => order.items.map(item => item.productId))
+        .filter(id => id);
+      const uniqueProductIds = [...new Set(allProductIds)];
+      console.log('Unique product IDs:', uniqueProductIds);
+
+      const productPromises = uniqueProductIds.map(id => fetchProduct(id));
+      const productsData = await Promise.all(productPromises);
+
+      const productsMap = {};
+      productsData.forEach(product => {
+        if (product && product.id) {
+          productsMap[product.id] = product.brand;
+        }
+      });
+      console.log('Products map:', productsMap);
+
+      // Add brand to each order's items
+      const updatedOrders = completedOrders.map(order => ({
+        ...order,
+        items: order.items.map(item => ({
+          ...item,
+          brand: productsMap[item.productId] || "N/A"
+        }))
+      }));
+
+      console.log('Updated orders with brands:', updatedOrders);
+      setOrders(updatedOrders);
+      setFilteredOrders(updatedOrders);
+    } catch (error) {
+      console.error("Error fetching order history:", error);
+      setOrders([]);
+      setFilteredOrders([]);
+    }
   };
 
   useEffect(() => {
@@ -128,6 +177,7 @@ const OrderHistory = () => {
                             <thead className="bg-gray-100">
                               <tr>
                                 <th className="border p-2">Product Name</th>
+                                <th className="border p-2">Brand</th>
                                 <th className="border p-2">Quantity</th>
                                 <th className="border p-2">Price</th>
                                 <th className="border p-2">Total</th>
@@ -137,6 +187,7 @@ const OrderHistory = () => {
                               {order.items.map((item, idx) => (
                                 <tr key={idx} className="border">
                                   <td className="border p-2">{item.productName}</td>
+                                  <td className="border p-2">{item.brand}</td>
                                   <td className="border p-2 text-center">{item.quantity}</td>
                                   <td className="border p-2 text-center">₹{item.price.toFixed(2)}</td>
                                   <td className="border p-2 text-center">

@@ -15,9 +15,13 @@ const AllShopsPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
-  // Get user location
-  useEffect(() => {
-    if (navigator.geolocation) {
+  // Load coordinates from localStorage
+  const loadCoordinatesFromStorage = () => {
+    const storedCoordinates = localStorage.getItem("userCoordinates");
+    if (storedCoordinates) {
+      const { latitude, longitude } = JSON.parse(storedCoordinates);
+      setUserLocation({ latitude, longitude });
+    } else if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setUserLocation({
@@ -26,25 +30,53 @@ const AllShopsPage = () => {
           });
         },
         (error) => {
-          console.error("Error getting location:", error);
+          console.error("Error getting geolocation", error);
           setLoading(false);
         }
       );
     } else {
-      console.log("Geolocation is not supported.");
+      console.log("Geolocation is not supported by this browser.");
       setLoading(false);
     }
+  };
+
+  // Initial load and setup event listeners
+  useEffect(() => {
+    loadCoordinatesFromStorage();
+
+    const handleCoordinatesUpdate = () => {
+      loadCoordinatesFromStorage();
+    };
+
+    const handleStorageChange = (event) => {
+      if (event.key === "userCoordinates") {
+        const newCoordinates = JSON.parse(event.newValue);
+        setUserLocation({
+          latitude: newCoordinates.latitude,
+          longitude: newCoordinates.longitude,
+        });
+      }
+    };
+
+    window.addEventListener("userCoordinatesUpdated", handleCoordinatesUpdate);
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("userCoordinatesUpdated", handleCoordinatesUpdate);
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
-    // Fetch categories
-    useEffect(() => {
-      fetchCategories();
-    }, []);
+  // Fetch categories
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
-  // Fetch nearby shops once location is available
+  // Fetch nearby shops when userLocation changes
   useEffect(() => {
     if (userLocation) {
       fetchNearbyShops(userLocation.latitude, userLocation.longitude);
+      console.log("Fetching shops for latitude:", userLocation.latitude);
     }
   }, [userLocation]);
 
@@ -62,6 +94,7 @@ const AllShopsPage = () => {
   };
 
   const fetchNearbyShops = async (latitude, longitude) => {
+    setLoading(true);
     try {
       const response = await axios.get(
         `http://localhost:8081/api/sellers/nearby?latitude=${latitude}&longitude=${longitude}`
@@ -76,6 +109,7 @@ const AllShopsPage = () => {
     } catch (error) {
       console.error("Error fetching shops:", error);
       setLoading(false);
+      setShops([]);
     }
   };
 
@@ -92,20 +126,17 @@ const AllShopsPage = () => {
     return R * c; // Distance in km
   };
 
-  // Store selected shop ID in local storage
   const handleShopSelect = (shop) => {
     console.log("Selected Shop:", shop);
     let storedData = JSON.parse(localStorage.getItem("cart")) || {};
 
-      // If shop is not already in cart, initialize it
-      if (!storedData[shop.id]) {
-        storedData[shop.id] = { shopId: shop.id, products: [] };
-      }
-  
-      // Remove shop if no products are added (for cleanup)
-      if (storedData[shop.id].products.length === 0) {
-        delete storedData[shop.id];
-      }
+    if (!storedData[shop.id]) {
+      storedData[shop.id] = { shopId: shop.id, products: [] };
+    }
+
+    if (storedData[shop.id].products.length === 0) {
+      delete storedData[shop.id];
+    }
 
     localStorage.setItem("cart", JSON.stringify(storedData));
     console.log("Updated Local Storage:", storedData);
@@ -119,15 +150,15 @@ const AllShopsPage = () => {
     if (filterType === "distance" && shop.distance > selectedDistance) {
       return false;
     }
-    if (filterType === "category" && selectedCategory && (!shop.categories || !shop.categories.includes(selectedCategory))) {
+    if (
+      filterType === "category" &&
+      selectedCategory &&
+      (!shop.categories || !shop.categories.includes(selectedCategory))
+    ) {
       return false;
     }
-    
     return true;
   });
-  
-  
-  
 
   // Apply Sorting
   const sortedShops = [...filteredShops].sort((a, b) => {
@@ -163,7 +194,11 @@ const AllShopsPage = () => {
       {/* Filters and Sorting */}
       <div className="flex flex-col sm:flex-row justify-between mb-4">
         <div>
-          <select value={sortType} onChange={(e) => setSortType(e.target.value)} className="border p-2 rounded-md">
+          <select
+            value={sortType}
+            onChange={(e) => setSortType(e.target.value)}
+            className="border p-2 rounded-md"
+          >
             <option value="distance">Sort by Distance</option>
             <option value="rating">Sort by Rating</option>
             <option value="name">Sort Alphabetically</option>
@@ -172,8 +207,15 @@ const AllShopsPage = () => {
 
         <div className="flex gap-4">
           <div>
-            <label htmlFor="filterType" className="font-medium">Filter By:</label>
-            <select id="filterType" value={filterType} onChange={(e) => setFilterType(e.target.value)} className="border p-2 rounded-md">
+            <label htmlFor="filterType" className="font-medium">
+              Filter By:
+            </label>
+            <select
+              id="filterType"
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="border p-2 rounded-md"
+            >
               <option value="distance">Distance</option>
               <option value="category">Category</option>
             </select>
@@ -181,8 +223,15 @@ const AllShopsPage = () => {
 
           {filterType === "distance" ? (
             <div>
-              <label htmlFor="distance" className="font-medium">Filter by Distance:</label>
-              <select id="distance" value={selectedDistance} onChange={(e) => setSelectedDistance(Number(e.target.value))} className="border p-2 rounded-md">
+              <label htmlFor="distance" className="font-medium">
+                Filter by Distance:
+              </label>
+              <select
+                id="distance"
+                value={selectedDistance}
+                onChange={(e) => setSelectedDistance(Number(e.target.value))}
+                className="border p-2 rounded-md"
+              >
                 <option value={5}>Up to 5 km</option>
                 <option value={10}>Up to 10 km</option>
                 <option value={15}>Up to 15 km</option>
@@ -193,12 +242,21 @@ const AllShopsPage = () => {
             </div>
           ) : (
             <div>
-              <label htmlFor="category" className="font-medium">Filter by Category:</label>
-              <select id="category" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="border p-2 rounded-md">
+              <label htmlFor="category" className="font-medium">
+                Filter by Category:
+              </label>
+              <select
+                id="category"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="border p-2 rounded-md"
+              >
                 <option value="">All Categories</option>
-                <option value="Grocery">Grocery</option>
-                <option value="Electronics">Electronics</option>
-                <option value="Spices">Spices</option>
+                {Object.entries(categories).map(([id, name]) => (
+                  <option key={id} value={id}>
+                    {name}
+                  </option>
+                ))}
               </select>
             </div>
           )}
@@ -211,18 +269,21 @@ const AllShopsPage = () => {
           <div
             key={shop.id}
             onClick={() => {
-              handleShopSelect(shop)
-              console.log("Selected Shop Details:", shop.id); // Log shop details
+              handleShopSelect(shop);
+              console.log("Selected Shop Details:", shop.id);
               navigate(`/shop/${shop.id}`);
-              
             }}
             className="shop-card-large border p-4 rounded-lg shadow-md hover:shadow-lg transition cursor-pointer mx-2"
           >
-            <img src={shop.shopImageUrl} alt={shop.shopName} className="w-full h-40 object-cover rounded-md" />
+            <img
+              src={shop.shopImageUrl}
+              alt={shop.shopName}
+              className="w-full h-40 object-cover rounded-md"
+            />
             <h3 className="mt-2 font-semibold">{shop.shopName}</h3>
-            {/* <p className="text-gray-600">Category: {shop.categories.join(", ")}</p> */}
             <p className="text-gray-600">
-              <strong>Category:</strong> {shop.categories.map((id) => categories[id]).filter(Boolean).join(", ") || "N/A"}
+              <strong>Category:</strong>{" "}
+              {shop.categories.map((id) => categories[id]).filter(Boolean).join(", ") || "N/A"}
             </p>
             <p className="text-gray-600">Rating: ⭐ {shop.rating.toFixed(1)}</p>
             <p className="text-gray-600">Distance: {shop.distance.toFixed(2)} km</p>

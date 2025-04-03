@@ -66,7 +66,7 @@ const ProductDetailsPage = () => {
             <span className="font-semibold">Brand:</span> {product.brand}
           </p>
           <p className="text-gray-600">
-            <span className="font-semibold">Quantity:</span> {product.description}
+            <span className="font-semibold">Quantity:</span> {product.netQuantity} {product.unit}
           </p>
 
           {/* Price Section (Moved Below, Increased Size) */}

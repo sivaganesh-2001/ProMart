@@ -10,7 +10,7 @@ const CategoryShops = () => {
   const [sortType, setSortType] = useState("distance");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryId, setCategoryId] = useState(null);
-  const { categoryName } = useParams(); // Get category name from URL
+  const { categoryName } = useParams();
   const navigate = useNavigate();
 
   // Fetch category ID from backend
@@ -20,7 +20,6 @@ const CategoryShops = () => {
         const response = await axios.get("http://localhost:8081/api/categories");
         const categories = response.data;
         console.log(categories);
-        // Find category ID based on categoryName
         const matchedCategory = categories.find(
           (cat) => cat.name.toLowerCase() === categoryName.toLowerCase()
         );
@@ -39,9 +38,13 @@ const CategoryShops = () => {
     fetchCategoryId();
   }, [categoryName]);
 
-  // Get user location
-  useEffect(() => {
-    if (navigator.geolocation) {
+  // Load coordinates from localStorage
+  const loadCoordinatesFromStorage = () => {
+    const storedCoordinates = localStorage.getItem("userCoordinates");
+    if (storedCoordinates) {
+      const { latitude, longitude } = JSON.parse(storedCoordinates);
+      setUserLocation({ latitude, longitude });
+    } else if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setUserLocation({
@@ -50,7 +53,7 @@ const CategoryShops = () => {
           });
         },
         (error) => {
-          console.error("Error getting location:", error);
+          console.error("Error getting geolocation", error);
           setLoading(false);
         }
       );
@@ -58,9 +61,36 @@ const CategoryShops = () => {
       console.log("Geolocation is not supported.");
       setLoading(false);
     }
+  };
+
+  // Initial load and setup event listener for coordinate updates
+  useEffect(() => {
+    loadCoordinatesFromStorage();
+
+    const handleCoordinatesUpdate = () => {
+      loadCoordinatesFromStorage();
+    };
+
+    const handleStorageChange = (event) => {
+      if (event.key === "userCoordinates") {
+        const newCoordinates = JSON.parse(event.newValue);
+        setUserLocation({
+          latitude: newCoordinates.latitude,
+          longitude: newCoordinates.longitude,
+        });
+      }
+    };
+
+    window.addEventListener("userCoordinatesUpdated", handleCoordinatesUpdate);
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("userCoordinatesUpdated", handleCoordinatesUpdate);
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
-  // Fetch nearby shops once location is available
+  // Fetch nearby shops when userLocation changes
   useEffect(() => {
     if (userLocation) {
       fetchNearbyShops(userLocation.latitude, userLocation.longitude);
@@ -68,26 +98,30 @@ const CategoryShops = () => {
   }, [userLocation]);
 
   const fetchNearbyShops = async (latitude, longitude) => {
+    setLoading(true);
     try {
       const response = await axios.get(
         `http://localhost:8081/api/sellers/nearby?latitude=${latitude}&longitude=${longitude}`
       );
 
-      const shopsWithDistance = response.data.map((shop) => ({
-        ...shop,
-        distance: calculateDistance(latitude, longitude, shop.location.y, shop.location.x),
-        rating: shop.rating || 4.5, // Default rating if not available
-      }));
+      const shopsWithDistance = response.data
+        .map((shop) => ({
+          ...shop,
+          distance: calculateDistance(latitude, longitude, shop.location.y, shop.location.x),
+          rating: shop.rating || 4.5,
+        }))
+        .filter((shop) => shop.distance <= 30); // Filter shops within 30 km
 
       setShops(shopsWithDistance);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching shops:", error);
       setLoading(false);
+      setShops([]);
     }
   };
 
-  // Haversine Formula for Distance Calculation
+  // Haversine Formula for Distance Calculation (returns distance in km)
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371; // Earth's radius in km
     const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -100,7 +134,6 @@ const CategoryShops = () => {
     return R * c; // Distance in km
   };
 
-  // Store selected shop ID in local storage
   const handleShopSelect = (shop) => {
     let storedData = JSON.parse(localStorage.getItem("cart")) || {};
 
@@ -116,12 +149,14 @@ const CategoryShops = () => {
     navigate(`/shop/${shop.id}`);
   };
 
-  // Filter shops based on fetched category ID
+  // Filter shops by category and search query
   const filteredShops = categoryId
-    ? shops.filter((shop) => shop.categories.includes(categoryId))
+    ? shops
+        .filter((shop) => shop.categories.includes(categoryId))
+        .filter((shop) =>
+          shop.shopName.toLowerCase().includes(searchQuery.toLowerCase())
+        )
     : [];
-
-  console.log("Fetched Shops:", shops);
 
   // Apply Sorting
   const sortedShops = [...filteredShops].sort((a, b) => {
@@ -135,7 +170,9 @@ const CategoryShops = () => {
 
   return (
     <div className="shop-grid-container py-10 px-4">
-      <h2 className="text-2xl font-semibold text-center mb-6">Shops for {categoryName}</h2>
+      <h2 className="text-2xl font-semibold text-center mb-6">
+        Shops for {categoryName}
+      </h2>
 
       {/* Search Bar */}
       <div className="mb-4 flex justify-center">
@@ -156,7 +193,11 @@ const CategoryShops = () => {
 
       {/* Sorting */}
       <div className="mb-4">
-        <select value={sortType} onChange={(e) => setSortType(e.target.value)} className="border p-2 rounded-md">
+        <select
+          value={sortType}
+          onChange={(e) => setSortType(e.target.value)}
+          className="border p-2 rounded-md"
+        >
           <option value="distance">Sort by Distance</option>
           <option value="rating">Sort by Rating</option>
           <option value="name">Sort Alphabetically</option>
@@ -165,18 +206,26 @@ const CategoryShops = () => {
 
       {/* Shop Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {sortedShops.map((shop) => (
-          <div
-            key={shop.id}
-            onClick={() => handleShopSelect(shop)}
-            className="shop-card-large border p-4 rounded-lg shadow-md hover:shadow-lg transition cursor-pointer mx-2"
-          >
-            <img src={shop.shopImageUrl} alt={shop.shopName} className="w-full h-40 object-cover rounded-md" />
-            <h3 className="mt-2 font-semibold">{shop.shopName}</h3>
-            <p className="text-gray-600">Rating: ⭐ {shop.rating.toFixed(1)}</p>
-            <p className="text-gray-600">Distance: {shop.distance.toFixed(2)} km</p>
-          </div>
-        ))}
+        {sortedShops.length > 0 ? (
+          sortedShops.map((shop) => (
+            <div
+              key={shop.id}
+              onClick={() => handleShopSelect(shop)}
+              className="shop-card-large border p-4 rounded-lg shadow-md hover:shadow-lg transition cursor-pointer mx-2"
+            >
+              <img
+                src={shop.shopImageUrl}
+                alt={shop.shopName}
+                className="w-full h-40 object-cover rounded-md"
+              />
+              <h3 className="mt-2 font-semibold">{shop.shopName}</h3>
+              <p className="text-gray-600">Rating: ⭐ {shop.rating.toFixed(1)}</p>
+              <p className="text-gray-600">Distance: {shop.distance.toFixed(2)} km</p>
+            </div>
+          ))
+        ) : (
+          <p className="text-center col-span-full">No shops found within 30 km for this category.</p>
+        )}
       </div>
     </div>
   );

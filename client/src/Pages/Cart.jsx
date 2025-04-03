@@ -37,10 +37,13 @@ function Cart() {
 
   // Fetch shop details using shop IDs
   const fetchShopDetails = async (shopIds) => {
+    console.log(shopIds);
     try {
       const responses = await Promise.all(
         shopIds.map((shopId) => axios.get(`http://localhost:8081/api/shops/${shopId}`))
+        
       );
+   
       const shopData = responses.map((res) => res.data);
       setShopDetails(shopData);
     } catch (error) {
@@ -56,9 +59,10 @@ function Cart() {
 
   const handleOrderPage = (shop) => {
     const shopId = shop.id;
+    console.log('shopId',shopId);
     const selectedProducts = cartData[shopId] || {}; // Get products for the selected shop
   
-    navigate("/order", { state: { shop, selectedProducts } });
+    navigate("/order", { state: { shop, selectedProducts, shopId } });
   };
   
 

@@ -6,18 +6,16 @@ import { toast } from "react-toastify";
 import { removeFromCart } from "../Redux/Cart/cart.actions";
 import { MdDelete } from "react-icons/md";
 import { db } from "../firebase"; // Firestore instance
-import styles from "../styles/Cart.module.css";
 import "react-toastify/dist/ReactToastify.css";
 import { collection, query, where, getDocs } from "firebase/firestore";
-
-const DELIVERY_CHARGE = 40;
+import LocationPicker from "../components/seller/LocationPickerAddress"; // Import the LocationPicker component
 
 const OrderPage = () => {
   const location = useLocation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { shop, selectedProducts } = location.state;
+  const { shop, selectedProducts, shopId } = location.state;
   const [cartItems, setCartItems] = useState(selectedProducts);
   const customerEmail = localStorage.getItem("customerEmail");
 
@@ -25,11 +23,28 @@ const OrderPage = () => {
   const [loadingAddress, setLoadingAddress] = useState(true);
   const [editAddress, setEditAddress] = useState(false);
   const [tempAddress, setTempAddress] = useState({
+    name: "",
     address: "",
     phone: "",
   });
+  const [showMap, setShowMap] = useState(false);
+  const [deliveryCoordinates, setDeliveryCoordinates] = useState(null);
+  const [deliveryCharge, setDeliveryCharge] = useState(0); // Start with 0
+  const [shopDetails, setShopDetails] = useState(null); // State to hold shop details
+  const [shopLocation, setShopLocation] = useState(null); // State to hold shop location
+  const [loadingShop, setLoadingShop] = useState(true); // Loading state for shop
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        await fetchShopDetails(); // Fetch shop details in background
+        await fetchAddress(); // Fetch address after or in parallel
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast.error("Failed to fetch data.");
+      }
+    };
+
     const fetchAddress = async () => {
       if (!customerEmail) {
         console.error("Customer email is undefined!");
@@ -42,16 +57,11 @@ const OrderPage = () => {
 
         if (!querySnapshot.empty) {
           const userData = querySnapshot.docs[0].data();
-
           setUserAddress({
-            name:userData.name || "",
+            name: userData.name || "",
             address: userData.address || "",
             phone: userData.phone || "",
-          }); 
-
-          console.log("Name:", userData.name);
-          console.log("Address:", userData.address);
-          console.log("Mobile:", userData.phone);
+          });
         } else {
           setUserAddress(null);
         }
@@ -62,8 +72,110 @@ const OrderPage = () => {
       }
     };
 
-    fetchAddress();
-  }, [customerEmail]);
+    const fetchShopDetails = async () => {
+      setLoadingShop(true);
+      try {
+        const response = await axios.get(`http://localhost:8081/api/sellers/id/${shopId}`);
+        setShopDetails(response.data);
+        if (response.data.location) {
+          const loc = response.data.location;
+          setShopLocation({
+            lat: loc.y, // Latitude from 'y'
+            lng: loc.x, // Longitude from 'x'
+          });
+        } else if (shop.location) {
+          setShopLocation({
+            lat: shop.location.y || shop.location.lat,
+            lng: shop.location.x || shop.location.lng,
+          });
+        } else {
+          toast.error("Shop location is not available.");
+        }
+        console.log("Shop Location Set:", { lat: response.data.location?.y, lng: response.data.location?.x });
+      } catch (error) {
+        console.error("Error fetching shop details:", error);
+        toast.error("Failed to fetch shop details.");
+      } finally {
+        setLoadingShop(false);
+      }
+    };
+
+    fetchData();
+  }, [customerEmail, shopId, shop]);
+
+  const calculateDistance = (shopLoc, deliveryLoc) => {
+    // Extract latitude and longitude, handling both 'lat/lng' and 'latitude/longitude' formats
+    const shopLat = shopLoc.lat ?? shopLoc.latitude;
+    const shopLng = shopLoc.lng ?? shopLoc.longitude;
+    const deliveryLat = deliveryLoc.lat ?? deliveryLoc.latitude ?? parseFloat(deliveryLoc.address?.split(",")[0]);
+    const deliveryLng = deliveryLoc.lng ?? deliveryLoc.longitude ?? parseFloat(deliveryLoc.address?.split(",")[1]);
+
+    // Ensure both locations have valid lat/lng values
+    if (
+      !shopLat || !shopLng || !deliveryLat || !deliveryLng ||
+      isNaN(shopLat) || isNaN(shopLng) || isNaN(deliveryLat) || isNaN(deliveryLng)
+    ) {
+      console.error("Invalid coordinates:", { shopLoc, deliveryLoc });
+      return 0; // Return 0 if coordinates are invalid
+    }
+
+    const toRad = (value) => (value * Math.PI) / 180;
+
+    const R = 6371; // Radius of the Earth in km
+    const dLat = toRad(deliveryLat - shopLat);
+    const dLng = toRad(deliveryLng - shopLng);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(shopLat)) * Math.cos(toRad(deliveryLat)) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+
+    return distance;
+  };
+
+  const updateDeliveryCharge = (newDeliveryCoords) => {
+    if (loadingShop) {
+      toast.warn("Please wait while shop location is loading...");
+      return;
+    }
+
+    if (!shopLocation) {
+      toast.error("Shop location is not available. Please try again later.");
+      return;
+    }
+
+    // Normalize the delivery coordinates to ensure consistent keys
+    const normalizedDeliveryCoords = {
+      lat: newDeliveryCoords.latitude ?? parseFloat(newDeliveryCoords.address?.split(",")[0]),
+      lng: newDeliveryCoords.longitude ?? parseFloat(newDeliveryCoords.address?.split(",")[1]),
+      address: newDeliveryCoords.address, // Keep the address if needed
+    };
+
+    const distance = calculateDistance(shopLocation, normalizedDeliveryCoords);
+
+    if (distance === 0) {
+      toast.error("Unable to calculate distance. Please select a valid location.");
+      return;
+    }
+
+    if (distance > 30) {
+      toast.error("Delivery distance should be within 30 km.");
+      setDeliveryCoordinates(null);
+      setDeliveryCharge(0);
+      return;
+    }
+
+    if (distance <= 4) {
+      setDeliveryCharge(40);
+    } else {
+      setDeliveryCharge(Math.ceil(distance) * 10);
+    }
+
+    setDeliveryCoordinates(normalizedDeliveryCoords);
+    console.log("Delivery Coordinates Set:", normalizedDeliveryCoords);
+    console.log("Calculated Distance:", distance, "Delivery Charge:", deliveryCharge);
+  };
 
   const updateQuantity = async (productId, change) => {
     const newQuantity = (cartItems[productId] || 0) + change;
@@ -103,8 +215,8 @@ const OrderPage = () => {
   };
 
   const validateAndProceed = (paymentType) => {
-    if (!userAddress?.name || !userAddress?.address || !userAddress?.phone) {
-      toast.warn("Please fill in all address fields before proceeding.");
+    if (loadingShop || !userAddress?.name || !userAddress?.address || !userAddress?.phone || !deliveryCoordinates) {
+      toast.warn("Please wait for shop details to load and fill in all address fields and select a delivery location before proceeding.");
       return;
     }
 
@@ -118,13 +230,66 @@ const OrderPage = () => {
       return;
     }
 
-    navigate(paymentType === "cod" ? "/order-review" : "/order-review-pay", {
+    if (deliveryCharge === 0) {
+      toast.warn("Please select a valid delivery location to calculate charges.");
+      return;
+    }
+
+    const totalMRP = Object.entries(cartItems).reduce(
+      (total, [productId, qty]) => total + qty * shop.products.find((p) => p.id === productId).price,
+      0
+    );
+    const finalTotal = totalMRP + deliveryCharge;
+
+    navigate("/order-review", {
       state: {
         cartItems,
         shop,
         userAddress,
         totalMRP,
         finalTotal,
+        deliveryCharge,
+        deliveryCoordinates,
+      },
+    });
+  };
+
+  const validateAndPay = (paymentType) => {
+    if (loadingShop || !userAddress?.name || !userAddress?.address || !userAddress?.phone || !deliveryCoordinates) {
+      toast.warn("Please wait for shop details to load and fill in all address fields and select a delivery location before proceeding.");
+      return;
+    }
+
+    if (userAddress.name.length < 3) {
+      toast.warn("Name should be at least 3 characters long.");
+      return;
+    }
+
+    if (!/^\d{10}$/.test(userAddress.phone)) {
+      toast.warn("Invalid mobile number. It should be 10 digits.");
+      return;
+    }
+
+    if (deliveryCharge === 0) {
+      toast.warn("Please select a valid delivery location to calculate charges.");
+      return;
+    }
+
+    const totalMRP = Object.entries(cartItems).reduce(
+      (total, [productId, qty]) => total + qty * shop.products.find((p) => p.id === productId).price,
+      0
+    );
+    const finalTotal = totalMRP + deliveryCharge;
+
+    navigate("/order-review-pay", {
+      state: {
+        cartItems,
+        shop,
+        userAddress,
+        totalMRP,
+        finalTotal,
+        deliveryCharge,
+        deliveryCoordinates,
       },
     });
   };
@@ -149,122 +314,179 @@ const OrderPage = () => {
   };
 
   const totalMRP = Object.entries(cartItems).reduce(
-    (total, [productId, qty]) => total + qty * shop.products.find((p) => p.id === productId).price,
+    (total, [productId, qty]) => {
+      const product = shop.products.find((p) => p.id === productId);
+      return product ? total + qty * product.price : total;
+    },
     0
   );
-  const finalTotal = totalMRP + DELIVERY_CHARGE;
+
+  const finalTotal = totalMRP + deliveryCharge;
 
   return (
     <div className="flex flex-col bg-[#F5F1F7] h-[100vh]">
       <div className="flex pl-[13%] pt-4 pb-3">
-        <h2 className="text-[24px] font-semibold ">
+        <h2 className="text-[24px] font-semibold">
           Order from {shop.shopName} ({Object.keys(cartItems).length} Items)
         </h2>
       </div>
 
       <div className="flex flex-row justify-center items-start gap-x-6">
-        {/* Cart Section */}
-        <div className="overflow-y-scroll h-[400px] w-[600px] p-4 bg-white rounded-lg shadow-lg">
-          {Object.entries(cartItems).map(([productId, qty]) => {
-            const product = shop.products.find((p) => p.id === productId);
-            if (!product) return null;
+        {/* Left Column: Stacked Cards */}
+        <div className="flex flex-col gap-6 w-[600px]">
+          {/* Cart Section */}
+          <div className="overflow-y-auto h-[400px] p-4 bg-white rounded-lg shadow-lg">
+            {Object.entries(cartItems).map(([productId, qty]) => {
+              const product = shop.products.find((p) => p.id === productId);
+              if (!product) return null;
 
-            return (
-              <div key={productId} className="border p-4 flex justify-between items-center bg-gray-100 rounded-lg mb-3">
-                <img src={product.imageUrl} alt={product.productName} className="h-[80px] w-[80px] rounded-md object-cover" />
-
-                <div className="ml-4 font-medium flex-1">
-                  <p className="text-[16px]">{product.productName}</p>
-                  <p className="font-semibold text-[18px]">₹{product.price}</p>
+              return (
+                <div key={productId} className="border p-4 flex justify-between items-center bg-gray-100 rounded-lg mb-3">
+                  <img src={product.imageUrl} alt={product.productName} className="h-[80px] w-[80px] rounded-md object-cover" />
+                  <div className="ml-4 font-medium flex-1">
+                    <p className="text-[16px]">{product.productName}</p>
+                    <p className="font-semibold text-[18px]">₹{product.price}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => updateQuantity(productId, -1)} className="bg-red-500 text-white px-3 py-1 rounded">-</button>
+                    <p className="text-[16px]">{qty}</p>
+                    <button onClick={() => updateQuantity(productId, 1)} className="bg-green-500 text-white px-3 py-1 rounded">+</button>
+                  </div>
+                  <button
+                    onClick={() => handleRemove(productId)}
+                    className="bg-red-500 text-white px-3 py-1 rounded-lg flex items-center ml-4"
+                  >
+                    <MdDelete className="text-[20px]" />
+                  </button>
                 </div>
+              );
+            })}
+          </div>
 
-                <div className="flex items-center gap-2">
-                  <button onClick={() => updateQuantity(productId, -1)} className="bg-red-500 text-white px-3 py-1 rounded">-</button>
-                  <p className="text-[16px]">{qty}</p>
-                  <button onClick={() => updateQuantity(productId, 1)} className="bg-green-500 text-white px-3 py-1 rounded">+</button>
-                </div>
-                
-                <button
-    onClick={() => handleRemove(productId)}
-    className="bg-red-500 text-white px-3 py-1 rounded-lg flex items-center ml-4" // Added ml-4 for margin
-  >
-    <MdDelete className="text-[20px]" />
-  </button>
+          {/* New Delivery Location Card */}
+          <div className="h-[200px] p-4 bg-white rounded-lg shadow-lg">
+            <button
+              onClick={() => setShowMap(true)}
+              className="bg-blue-500 text-white px-6 py-2 rounded-lg w-full"
+              disabled={loadingShop}
+            >
+              {loadingShop ? "Loading..." : "Select Delivery Location"}
+            </button>
 
+            {deliveryCoordinates && shopLocation && !loadingShop && (
+              <div className="mt-4">
+                <p><strong>Selected Location:</strong> {deliveryCoordinates.address}</p>
+                <p><strong>Distance from Shop:</strong> {calculateDistance(shopLocation, deliveryCoordinates).toFixed(2)} km</p>
+                <p><strong>Delivery Charge:</strong> ₹{deliveryCharge}</p>
               </div>
-            );
-          })}
+            )}
+          </div>
         </div>
 
         {/* Price & Address Section */}
-        <div className="border p-6 rounded-lg bg-white shadow-lg w-[300px]">
-          <h3 className="text-lg font-semibold mb-4">Price Details</h3>
-          <p>MRP: ₹{totalMRP}</p>
-          <p>Delivery Fee: ₹{DELIVERY_CHARGE}</p>
-          <p className="font-bold mt-2">Total: ₹{finalTotal}</p>
+        <div className="border p-6 rounded-lg bg-white shadow-lg w-[300px] h-[610px] flex flex-col justify-between">
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Price Details</h3>
+            <p>MRP: ₹{totalMRP}</p>
+            <p>Delivery Fee: ₹{deliveryCharge || "Not calculated"}</p>
+            <p className="font-bold mt-2">Total: ₹{finalTotal || totalMRP}</p>
 
+            <div className="mt-4 border p-4 rounded-lg bg-gray-100 shadow-md">
+              <h3 className="text-lg font-semibold mb-2">Delivery Address</h3>
+              {editAddress ? (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center">
+                    <span className="material-icons mr-2">Name</span>
+                    <input
+                      type="text"
+                      placeholder="Name"
+                      value={tempAddress.name}
+                      className="border p-2 w-full rounded"
+                      onChange={(e) => setTempAddress({ ...tempAddress, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex items-center">
+                    <span className="material-icons mr-2">Phone</span>
+                    <input
+                      type="text"
+                      placeholder="Mobile No"
+                      value={tempAddress.phone}
+                      className="border p-2 w-full rounded"
+                      onChange={(e) => setTempAddress({ ...tempAddress, phone: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex items-center">
+                    <span className="material-icons mr-2">Address</span>
+                    <input
+                      type="text"
+                      placeholder="Address"
+                      value={tempAddress.address}
+                      className="border p-2 w-full rounded"
+                      onChange={(e) => setTempAddress({ ...tempAddress, address: e.target.value })}
+                    />
+                  </div>
+                  <button
+                    onClick={handleSaveAddress}
+                    className="bg-red-500 text-white px-4 py-2 rounded-lg mt-2 hover:bg-red-600 transition duration-200"
+                  >
+                    Save Address
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <div className="border p-4 rounded-lg bg-white shadow-sm">
+                    <p>
+                      <span className="font-semibold">Name: </span>
+                      {userAddress?.name || "Not set"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Mobile: </span>
+                      {userAddress?.phone || "Not set"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Address: </span>
+                      {userAddress?.address || "Not set"}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => { setTempAddress(userAddress || { name: "", address: "", phone: "" }); setEditAddress(true); }}
+                    className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-200"
+                  >
+                    Update Address
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
 
-          <div className="mt-4 border p-4 rounded-lg bg-gray-100 shadow-md">
-  <h3 className="text-lg font-semibold mb-2">Delivery Address</h3>
-  {editAddress ? (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center">
-        <span className="material-icons mr-2">Name</span>
-        <input
-          type="text"
-          placeholder="Name"
-          value={tempAddress.name}
-          className="border p-2 w-full rounded"
-          onChange={(e) => setTempAddress({ ...tempAddress, name: e.target.value })}
-        />
-      </div>
-      <div className="flex items-center">
-        <span className="material-icons mr-2">Address</span>
-        <input
-          type="text"
-          placeholder="Address"
-          value={tempAddress.address}
-          className="border p-2 w-full rounded"
-          onChange={(e) => setTempAddress({ ...tempAddress, address: e.target.value })}
-        />
-      </div>
-      <div className="flex items-center">
-        <span className="material-icons mr-2">Phone</span>
-        <input
-          type="text"
-          placeholder="Mobile No"
-          value={tempAddress.phone}
-          className="border p-2 w-full rounded"
-          onChange={(e) => setTempAddress({ ...tempAddress, phone: e.target.value })}
-        />
-      </div>
-      <button
-        onClick={handleSaveAddress}
-        className="bg-red-500 text-white px-4 py-2 rounded-lg mt-2 hover:bg-red-600 transition duration-200"
-      >
-        Save Address
-      </button>
-    </div>
-  ) : (
-    <div className="flex flex-col gap-2">
-      <div className="border p-4 rounded-lg bg-white shadow-sm">
-        <p className="font-semibold">Name: {userAddress?.name}</p>
-        <p>Address: {userAddress?.address}</p>
-        <p>Mobile: {userAddress?.phone}</p>
-      </div>
-      <button
-        onClick={() => { setTempAddress(userAddress); setEditAddress(true); }}
-        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-200"
-      >
-        Update Address
-      </button>
-    </div>
-  )}
-</div>
-          <button onClick={() => validateAndProceed("cod")} className="bg-blue-500 text-white px-6 py-2 rounded-lg mt-4 w-full">Cash on Delivery</button>
-          <button onClick={() => validateAndProceed("online")} className="bg-green-500 text-white px-6 py-2 rounded-lg mt-2 w-full">Continue to Payment</button>
+          <div>
+            <button
+              onClick={() => validateAndProceed("cod")}
+              className="bg-blue-500 text-white px-6 py-2 rounded-lg mt-4 w-full"
+              disabled={loadingShop || !deliveryCoordinates}
+            >
+              Cash on Delivery
+            </button>
+            <button
+              onClick={validateAndPay}
+              className="bg-green-500 text-white px-6 py-2 rounded-lg mt-4 w-full"
+              disabled={loadingShop || !deliveryCoordinates}
+            >
+              Continue to Payment
+            </button>
+          </div>
         </div>
       </div>
+
+      {showMap && (
+        <LocationPicker
+          setShowMap={setShowMap}
+          setDeliveryCoordinates={(coords) => updateDeliveryCharge(coords)}
+          setDeliveryCharge={setDeliveryCharge}
+          shopLocation={shopLocation}
+          loadingShop={loadingShop}
+        />
+      )}
     </div>
   );
 };

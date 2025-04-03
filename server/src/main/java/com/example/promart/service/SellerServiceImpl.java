@@ -1,20 +1,25 @@
 package com.example.promart.service;
 
-import com.example.promart.model.ApproveSeller;
-import com.example.promart.model.Product;
-import com.example.promart.model.Seller;
-import com.example.promart.repository.ApproveSellerRepository;
-import com.example.promart.repository.ProductRepository;
-import com.example.promart.repository.SellerRepository;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.Point;
 import org.springframework.stereotype.Service;
+
+import com.example.promart.model.ApproveSeller;
+import com.example.promart.model.Product;
+import com.example.promart.model.Rating;
+import com.example.promart.model.Seller;
+import com.example.promart.repository.ApproveSellerRepository;
+import com.example.promart.repository.ProductRepository;
+import com.example.promart.repository.RatingRepository;
+import com.example.promart.repository.SellerRepository;
 
 @Service
 public class SellerServiceImpl implements SellerService {
@@ -24,6 +29,9 @@ public class SellerServiceImpl implements SellerService {
     @Autowired
     private SellerRepository sellerRepository;
 
+    @Autowired
+    private RatingRepository ratingRepository;
+    
     @Autowired
     private ApproveSellerRepository approveSellerRepository;
 
@@ -177,6 +185,29 @@ public ApproveSeller registerSellerApprove(ApproveSeller approveSeller) {
         return "Seller not found!";
     }
 
+    public Rating addRating(String sellerId, String customerEmail, int rating, String review) {
+        // Validate rating
+        if (rating < 1 || rating > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5");
+        }
+
+        // Create new rating
+        Rating newRating = new Rating(sellerId, customerEmail, rating, review, LocalDateTime.now());
+        Rating savedRating = ratingRepository.save(newRating);
+
+        // Update seller's rating stats
+        Seller seller = sellerRepository.findById(sellerId)
+                .orElseThrow(() -> new RuntimeException("Seller not found with ID: " + sellerId));
+        seller.updateRatingStats(rating); // Assume this method exists in Seller model
+        sellerRepository.save(seller);
+
+        return savedRating;
+    }
+
+    public List<Rating> getRatingsForSeller(String sellerId) {
+        return ratingRepository.findBySellerId(sellerId);
+    }
+
     public boolean approveOrRejectSeller(String sellerId, String status) {
         Optional<ApproveSeller> approveSellerOptional = approveSellerRepository.findById(sellerId);
 
@@ -212,4 +243,8 @@ public ApproveSeller registerSellerApprove(ApproveSeller approveSeller) {
         return true;
     }
 
+    public Seller getSeller(String sellerId) {
+        return sellerRepository.findById(sellerId)
+                .orElseThrow(() -> new RuntimeException("Seller not found"));
+    }
 }

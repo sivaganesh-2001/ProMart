@@ -214,13 +214,16 @@ const Products = () => {
                   <span className="text-sm text-gray-500">
                     {editingProductId === product.id ? (
                       <textarea
-                        value={editFormData.description}
-                        onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                        value={editFormData.netQuantity}
+                        onChange={(e) => setEditFormData({ ...editFormData, netQuantity: e.target.value})}
                         className="border p-1 rounded w-full"
                       />
                     ) : (
-                      product.description
-                    )}
+                   `${product.netQuantity} ${product.unit}`
+              
+                    )
+
+                    }
                   </span>
                 </td>
                 <td className="border p-2">

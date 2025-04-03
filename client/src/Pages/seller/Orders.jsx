@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import MainLayout from "../../components/layouts/SellerLayout";
-import Footer from "../../components/Footer";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 
@@ -19,21 +18,68 @@ const Orders = () => {
     fetchOrders();
   }, [sellerEmail]);
 
-  const fetchOrders = () => {
-    fetch(`http://localhost:8081/api/orders?sellerEmail=${sellerEmail}`)
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Orders API response:", data); // Debugging
-        if (!Array.isArray(data)) {
-          console.error("Error: Orders API response is not an array", data);
-          setOrders([]); // Set an empty array to prevent crashing
-          setFilteredOrders([]);
-        } else {
-          setOrders(data);
-          setFilteredOrders(data);
+  const fetchProduct = async (productId) => {
+    try {
+      console.log('Fetching product with ID:', productId);
+      const response = await fetch(`http://localhost:8081/api/products/${productId}`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const productData = await response.json();
+      console.log('Product data received:', productData);
+      return productData;
+    } catch (error) {
+      console.error("Error fetching product:", error);
+      return null;
+    }
+  };
+
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`http://localhost:8081/api/orders?sellerEmail=${sellerEmail}`);
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      const orderData = await res.json();
+      console.log("Orders API response:", orderData);
+
+      if (!Array.isArray(orderData)) {
+        console.error("Error: Orders API response is not an array", orderData);
+        setOrders([]);
+        setFilteredOrders([]);
+        return;
+      }
+
+      const allProductIds = orderData
+        .flatMap(order => order.items.map(item => item.productId))
+        .filter(id => id);
+      const uniqueProductIds = [...new Set(allProductIds)];
+      console.log('Unique product IDs:', uniqueProductIds);
+
+      const productPromises = uniqueProductIds.map(id => fetchProduct(id));
+      const productsData = await Promise.all(productPromises);
+
+      const productsMap = {};
+      productsData.forEach(product => {
+        if (product && product.id) {
+          productsMap[product.id] = product.brand;
         }
-      })
-      .catch((error) => console.error("Error fetching orders:", error));
+      });
+      console.log('Products map:', productsMap);
+
+      const updatedOrders = orderData.map(order => ({
+        ...order,
+        items: order.items.map(item => ({
+          ...item,
+          brand: productsMap[item.productId] || "N/A"
+        }))
+      }));
+
+      console.log('Updated orders with brands:', updatedOrders);
+      setOrders(updatedOrders);
+      setFilteredOrders(updatedOrders);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const generateBill = async (order) => {
@@ -43,10 +89,11 @@ const Orders = () => {
       customerEmail: order.customerEmail,
       sellerId: sellerEmail,
       items: order.items.map(item => ({
-        productId: item.productId, // Ensure this is the correct product ID
+        productId: item.productId,
         quantity: item.quantity,
         price: item.price,
-        productName: item.productName
+        productName: item.productName,
+        brand: item.brand
       })),
       totalAmount: order.totalAmount,
       paymentMethod: order.paymentMethod || "Cash on Delivery",
@@ -56,8 +103,8 @@ const Orders = () => {
       orderDate: order.orderDate || new Date().toISOString(),
       billGeneratedTime: new Date().toISOString(),
     };
-    console.log("Bill Data:", billData); // Log bill data for debugging
-    
+    console.log("Bill Data:", billData);
+
     try {
       const response = await fetch("http://localhost:8081/api/billing/online/save", {
         method: "POST",
@@ -69,16 +116,13 @@ const Orders = () => {
       const jsonData = await response.json();
       console.log("Bill saved:", jsonData);
 
-
-
       const productQuantities = order.items.reduce((acc, item) => {
-        acc[item.productId] = (acc[item.productId] || 0) + Number(item.quantity); // Ensure cumulative quantity
+        acc[item.productId] = (acc[item.productId] || 0) + Number(item.quantity);
         return acc;
       }, {});
 
-      console.log("Product Quantities:", productQuantities); // Log product quantities for debugging
+      console.log("Product Quantities:", productQuantities);
 
-      // Reduce stock levels
       const stockResponse = await fetch("http://localhost:8081/api/products/reduceStock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -88,40 +132,31 @@ const Orders = () => {
       if (!stockResponse.ok) throw new Error("Failed to reduce stock");
       console.log("Stock reduced successfully");
 
-      alert("Bill saved successfully!");
-try{
-          // 🔹 Generate and Download PDF
-    const pdf = new jsPDF();
-    pdf.text("Invoice - Promart", 14, 20);
-    pdf.text(`Customer: ${order.customerEmail}`, 14, 30);
-    pdf.text(`Phone: ${order.phone}`, 14, 40);
-    pdf.text(`Address: ${order.address}`, 14, 50);
-    pdf.text(`Payment: ${billData.paymentMethod}`, 14, 60);
-    pdf.text(`Total Amount: ₹${order.totalAmount.toFixed(2)}`, 14, 70);
+      const pdf = new jsPDF();
+      pdf.text("Invoice - Promart", 14, 20);
+      pdf.text(`Customer: ${order.customerEmail}`, 14, 30);
+      pdf.text(`Phone: ${order.phone}`, 14, 40);
+      pdf.text(`Address: ${order.address}`, 14, 50);
+      pdf.text(`Payment: ${billData.paymentMethod}`, 14, 60);
+      pdf.text(`Total Amount: ₹${order.totalAmount.toFixed(2)}`, 14, 70);
 
-    pdf.autoTable({
-      startY: 80,
-      head: [["S.No", "Product", "Quantity", "Price", "Total"]],
-      body: order.items.map((item, index) => [
-        index + 1,
-        item.productName,
-        item.quantity,
-        `₹${item.price.toFixed(2)}`,
-        `₹${(item.quantity * item.price).toFixed(2)}`,
-      ]),
-    });
+      pdf.autoTable({
+        startY: 80,
+        head: [["S.No", "Product", "Brand", "Quantity", "Price", "Total"]],
+        body: order.items.map((item, index) => [
+          index + 1,
+          item.productName,
+          item.brand,
+          item.quantity,
+          `₹${item.price.toFixed(2)}`,
+          `₹${(item.quantity * item.price).toFixed(2)}`,
+        ]),
+      });
 
-    pdf.text("Thank you for shopping with us!", 14, pdf.internal.pageSize.height - 30);
-    pdf.save(`Invoice_${order.customerEmail}.pdf`);
+      pdf.text("Thank you for shopping with us!", 14, pdf.internal.pageSize.height - 30);
+      pdf.save(`Invoice_${order.customerEmail}.pdf`);
 
-    alert("Bill Will be Downloaded!");
-  }catch (error) {
-    console.error("Error:", error);
-    alert("Failed to generate bill: " + error.message);
-  } finally {
-    setLoading(false);
-  }
-
+      alert("Bill saved and downloaded successfully!");
     } catch (error) {
       console.error("Error:", error);
       alert("Failed to generate bill: " + error.message);
@@ -148,16 +183,14 @@ try{
       })
       .then((response) => {
         console.log("Order updated successfully", response);
-
         if (newStatus === "Delivered" || newStatus === "Cancelled") {
-          // Remove order from the state
           setOrders((prevOrders) => prevOrders.filter((order) => order.id !== id));
           setFilteredOrders((prevOrders) => prevOrders.filter((order) => order.id !== id));
         }
       })
       .catch((error) => {
         console.error("Error updating status:", error);
-        fetchOrders(); // Revert back to correct data from backend
+        fetchOrders();
       });
   };
 
@@ -193,7 +226,6 @@ try{
           <p className="text-sm mt-1">View and update your store's orders easily!</p>
         </div>
 
-        {/* Sorting & Filtering Section */}
         <div className="flex space-x-4 mt-4 mb-6">
           <select className="border p-2 rounded w-1/2" onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="">All Status</option>
@@ -211,7 +243,6 @@ try{
           </select>
         </div>
 
-        {/* Orders Table */}
         <table className="w-full border-collapse border border-gray-200">
           <thead className="bg-gray-100">
             <tr>
@@ -219,6 +250,7 @@ try{
               <th className="border p-2 text-left">Customer</th>
               <th className="border p-2">Mobile</th>
               <th className="border p-2">Total Amount</th>
+              <th className="border p-2">Payment Method</th>
               <th className="border p-2">Status</th>
               <th className="border p-2">Details</th>
             </tr>
@@ -231,6 +263,7 @@ try{
                   <td className="border p-2">{order.customerEmail}</td>
                   <td className="border p-2 text-center">{order.phone}</td>
                   <td className="border p-2 text-center">₹{order.totalAmount.toFixed(2)}</td>
+                  <td className="border p-2 text-center">{order.paymentMethod || "Cash on Delivery"}</td>
                   <td className="border p-2 text-center">
                     <select
                       className={`px-2 py-1 rounded border ${statusColors[order.status]}`}
@@ -256,7 +289,7 @@ try{
 
                 {selectedOrder === order.id && (
                   <tr className="bg-gray-50">
-                    <td colSpan="6" className="p-6 border-t-4 border-blue-500 rounded-lg shadow-md bg-white">
+                    <td colSpan="7" className="p-6 border-t-4 border-blue-500 rounded-lg shadow-md bg-white">
                       <div className="flex justify-between">
                         <h3 className="text-xl font-semibold text-blue-600">Order Details</h3>
                         <button
@@ -267,7 +300,6 @@ try{
                         </button>
                       </div>
 
-                      {/* Product Table */}
                       <div className="overflow-x-auto">
                         <table className="w-full border border-gray-300 bg-white shadow-sm rounded-lg">
                           <thead className="bg-gray-100">
@@ -296,7 +328,6 @@ try{
                       </div>
 
                       <div className="flex justify-between items-center mt-4">
-                        {/* Left Side: Mobile & Address */}
                         <div>
                           <p className="text-gray-700">
                             📞 <strong>Mobile:</strong> {order.phone}
@@ -304,9 +335,10 @@ try{
                           <p className="text-gray-700">
                             📍 <strong>Address:</strong> {order.address}
                           </p>
+                          <p className="text-gray-700">
+                            💳 <strong>Payment Method:</strong> {order.paymentMethod || "Cash on Delivery"}
+                          </p>
                         </div>
-
-                        {/* Right Side: Generate Bill Button */}
                         <button
                           onClick={() => generateBill(order)}
                           className="px-6 py-2 bg-green-600 text-white font-medium rounded-md shadow-md hover:bg-green-700 transition"
@@ -322,7 +354,6 @@ try{
           </tbody>
         </table>
       </div>
-
     </MainLayout>
   );
 };

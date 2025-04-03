@@ -1,21 +1,16 @@
 package com.example.promart.service;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.example.promart.model.Product;
 import com.example.promart.model.Seller;
 import com.example.promart.repository.ProductRepository;
 import com.example.promart.repository.SellerRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.Map;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -141,7 +136,7 @@ public class ProductServiceImpl implements ProductService {
             product.setPrice(updatedProduct.getPrice());
             product.setStock(updatedProduct.getStock());
             product.setUnit(updatedProduct.getUnit());
-            product.setDescription(updatedProduct.getDescription());
+            product.setNetQuantity(updatedProduct.getNetQuantity());
 
             return productRepository.save(product);
         } else {

@@ -1,8 +1,9 @@
 package com.example.promart.model;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.time.LocalDateTime;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.geo.Point;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -33,6 +34,8 @@ public class Seller {
     private String password;
     private String shopImageUrl;
 
+    
+
     @Field("location")
     @Indexed(name = "locationIndex")
     private Point location;
@@ -41,6 +44,12 @@ public class Seller {
 
     @DBRef
     private List<Product> products = new ArrayList<>();
+    private double averageRating; // Track average rating
+    private int totalRatings;
+
+    // Rating summary fields
+    private int reviewsCount = 0;          // Average rating (1-5)
+    private String reviewSentiments = "Neutral"; // Summary sentiment
 
      // 🔹 Sales & Performance Analytics
      private double totalSales;             // Total revenue
@@ -52,11 +61,9 @@ public class Seller {
      private double salesGrowthRate;        // Sales increase percentage over time
      private double stockTurnoverRate;      // How quickly inventory sells out
      private double profitMargin;           // Profit percentage
-     private double averageCartSize;        // Avg. number of products per order
-     private int reviewsCount;              // Number of customer reviews
-     private double averageRating;          // Star rating (1-5)
+     private double averageCartSize;        // Avg. number of products per order        // Star rating (1-5)
      private LocalDateTime lastOrderDate;   // Last order placed (for shop activity)
-     private String reviewSentiments;       // "Positive", "Neutral", "Negative" (Based on sentiment analysis)
+      // "Positive", "Neutral", "Negative" (Based on sentiment analysis)
  
 
     public Seller() {}
@@ -98,6 +105,15 @@ public class Seller {
     public void setProducts(List<Product> products) {
         this.products = products;
     }
+
+    public int getReviewsCount() { return reviewsCount; }
+    public void setReviewsCount(int reviewsCount) { this.reviewsCount = reviewsCount; }
+
+    public double getAverageRating() { return averageRating; }
+    public void setAverageRating(double averageRating) { this.averageRating = averageRating; }
+
+    public String getReviewSentiments() { return reviewSentiments; }
+    public void setReviewSentiments(String reviewSentiments) { this.reviewSentiments = reviewSentiments; }
 
     public void addProduct(Product product) {
         this.products.add(product);
@@ -170,6 +186,7 @@ public class Seller {
         this.categories = categories;
     }
     
+    
 
     public void addCategory(String category) {
         if (this.categories.size() < 5) {
@@ -205,6 +222,8 @@ public class Seller {
         this.shopImageUrl = shopImageUrl;
     }
 
+    
+
     public List<Order> getOrders() {
         return orders;
     }
@@ -236,11 +255,20 @@ public class Seller {
                 ", location=" + location +
                 ", products=" + products +
                 ", orders=" + orders +
+                ", reviewsCount=" + reviewsCount +
+                ", averageRating=" + averageRating +
+                ", reviewSentiments='" + reviewSentiments + '\''  +
                 '}';
     }
 
     public double getTotalSales() {
         return totalSales;
+    }
+
+    public void updateRatingStats(int newRating) {
+        double totalRatingSum = this.averageRating * this.reviewsCount + newRating;
+        this.reviewsCount++;
+        this.averageRating = totalRatingSum / this.reviewsCount;
     }
 
     public void setTotalSales(double totalSales) {
@@ -319,21 +347,7 @@ public class Seller {
         this.averageCartSize = averageCartSize;
     }
 
-    public int getReviewsCount() {
-        return reviewsCount;
-    }
 
-    public void setReviewsCount(int reviewsCount) {
-        this.reviewsCount = reviewsCount;
-    }
-
-    public double getAverageRating() {
-        return averageRating;
-    }
-
-    public void setAverageRating(double averageRating) {
-        this.averageRating = averageRating;
-    }
 
     public LocalDateTime getLastOrderDate() {
         return lastOrderDate;
@@ -341,14 +355,6 @@ public class Seller {
 
     public void setLastOrderDate(LocalDateTime lastOrderDate) {
         this.lastOrderDate = lastOrderDate;
-    }
-
-    public String getReviewSentiments() {
-        return reviewSentiments;
-    }
-
-    public void setReviewSentiments(String reviewSentiments) {
-        this.reviewSentiments = reviewSentiments;
     }
 
 }

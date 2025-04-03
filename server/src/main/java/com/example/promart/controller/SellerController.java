@@ -1,18 +1,19 @@
 package com.example.promart.controller;
+import com.example.promart.service.SellerService;
+import java.util.List;
+import java.util.Map;
+import com.example.promart.model.Rating;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import com.example.promart.model.ApproveSeller;
 import com.example.promart.model.Product;
 import com.example.promart.model.Seller;
 import com.example.promart.repository.SellerRepository;
 import com.example.promart.service.ProductService;
 import com.example.promart.service.SellerService;
-import java.util.List;
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin(origins = "http://localhost:3000")
@@ -58,6 +59,27 @@ public class SellerController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Seller not found");
     }
 }
+
+    // Endpoint to add a rating
+    @PostMapping("/{sellerId}/ratings")
+    public ResponseEntity<Rating> addRating(
+            @PathVariable String sellerId,
+            @RequestBody RatingRequest ratingRequest) {
+        Rating rating = sellerService.addRating(
+                sellerId,
+                ratingRequest.getCustomerEmail(),
+                ratingRequest.getRating(),
+                ratingRequest.getReview()
+        );
+        return new ResponseEntity<>(rating, HttpStatus.CREATED);
+    }
+
+    // Endpoint to get all ratings for a seller
+    @GetMapping("/{sellerId}/ratings")
+    public ResponseEntity<List<Rating>> getRatingsForSeller(@PathVariable String sellerId) {
+        List<Rating> ratings = sellerService.getRatingsForSeller(sellerId);
+        return new ResponseEntity<>(ratings, HttpStatus.OK);
+    }
 
 
     @GetMapping("/nearby")
@@ -148,6 +170,22 @@ public ResponseEntity<String> deleteSeller(@PathVariable String sellerId) {
     } else {
         return ResponseEntity.status(404).body("Seller not found!");
     }
+}
+
+class RatingRequest {
+    private String customerEmail;
+    private int rating;
+    private String review;
+
+    // Getters and setters
+    public String getCustomerEmail() { return customerEmail; }
+    public void setCustomerEmail(String customerEmail) { this.customerEmail = customerEmail; }
+
+    public int getRating() { return rating; }
+    public void setRating(int rating) { this.rating = rating; }
+
+    public String getReview() { return review; }
+    public void setReview(String review) { this.review = review; }
 }
 
 }

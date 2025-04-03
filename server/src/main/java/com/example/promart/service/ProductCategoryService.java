@@ -1,10 +1,12 @@
 package com.example.promart.service;
 
-import com.example.promart.model.ProductCategory;
-import com.example.promart.repository.ProductCategoryRepository;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.util.List;
+
+import com.example.promart.model.ProductCategory;
+import com.example.promart.repository.ProductCategoryRepository;
 
 @Service
 public class ProductCategoryService {
@@ -12,8 +14,13 @@ public class ProductCategoryService {
     @Autowired
     private ProductCategoryRepository productCategoryRepository;
 
+
     public List<ProductCategory> getAllProductCategories() {
         return productCategoryRepository.findAll();
+    }
+
+    public List<ProductCategory> getProductCategoriesByTopCategory(String topCategory) {
+        return productCategoryRepository.findByTopCategory(topCategory);
     }
 
     public ProductCategory addProductCategory(ProductCategory productCategory) {
