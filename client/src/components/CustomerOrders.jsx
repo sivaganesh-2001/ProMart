@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import Footer from "../components/Footer";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const CustomerOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -24,11 +26,9 @@ const CustomerOrders = () => {
 
   const fetchSeller = async (sellerId) => {
     try {
-      console.log('Fetching seller with ID:', sellerId);
       const response = await fetch(`http://localhost:8081/api/sellers/id/${sellerId}`);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const sellerData = await response.json();
-      console.log('Seller data received:', sellerData);
       return sellerData;
     } catch (error) {
       console.error("Error fetching seller:", error);
@@ -38,11 +38,9 @@ const CustomerOrders = () => {
 
   const fetchProduct = async (productId) => {
     try {
-      console.log('Fetching product with ID:', productId);
       const response = await fetch(`http://localhost:8081/api/products/${productId}`);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const productData = await response.json();
-      console.log('Product data received:', productData);
       return productData;
     } catch (error) {
       console.error("Error fetching product:", error);
@@ -54,11 +52,9 @@ const CustomerOrders = () => {
     setLoading(true);
     setError(null);
     try {
-      console.log('Fetching orders for email:', customerEmail);
       const res = await fetch(`http://localhost:8081/api/orders/customer?customerEmail=${customerEmail}`);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const orderData = await res.json();
-      console.log('Order data received:', orderData);
 
       if (!orderData || orderData.length === 0) {
         setOrders([]);
@@ -67,27 +63,25 @@ const CustomerOrders = () => {
         return;
       }
 
-      // Fetch seller information
       const uniqueSellerIds = [...new Set(orderData.map(order => order.sellerId).filter(id => id))];
-      console.log('Unique seller IDs:', uniqueSellerIds);
       const sellerPromises = uniqueSellerIds.map(id => fetchSeller(id));
       const sellersData = await Promise.all(sellerPromises);
 
       const sellersMap = {};
       sellersData.forEach(seller => {
         if (seller && seller.id) {
-          sellersMap[seller.id] = seller.shopName;
+          sellersMap[seller.id] = {
+            shopName: seller.shopName,
+            phone: seller.phone
+          };
         }
       });
-      console.log('Sellers map:', sellersMap);
       setSellers(sellersMap);
 
-      // Fetch product information for all items
       const allProductIds = orderData
         .flatMap(order => order.items.map(item => item.productId))
         .filter(id => id);
       const uniqueProductIds = [...new Set(allProductIds)];
-      console.log('Unique product IDs:', uniqueProductIds);
       
       const productPromises = uniqueProductIds.map(id => fetchProduct(id));
       const productsData = await Promise.all(productPromises);
@@ -98,20 +92,18 @@ const CustomerOrders = () => {
           productsMap[product.id] = product.brand;
         }
       });
-      console.log('Products map:', productsMap);
 
-      // Add shopName and brand to each order
       const updatedOrders = orderData.map(order => ({
         ...order,
         id: order.id,
-        shopName: sellersMap[order.sellerId] || "Unknown Shop",
+        shopName: sellersMap[order.sellerId]?.shopName || "Unknown Shop",
+        shopPhone: sellersMap[order.sellerId]?.phone || "N/A",
         items: order.items.map(item => ({
           ...item,
           brand: productsMap[item.productId] || "N/A"
         }))
       }));
 
-      console.log('Updated orders with shop names and brands:', updatedOrders);
       setOrders(updatedOrders);
       setFilteredOrders(updatedOrders);
     } catch (error) {
@@ -120,6 +112,57 @@ const CustomerOrders = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const updateStatus = (id) => {
+    // Optimistic UI update
+    setOrders((prevOrders) =>
+      prevOrders.map((order) =>
+        order.id === id ? { ...order, status: "Cancelled" } : order
+      )
+    );
+    setFilteredOrders((prevOrders) =>
+      prevOrders.map((order) =>
+        order.id === id ? { ...order, status: "Cancelled" } : order
+      )
+    );
+
+    fetch(`http://localhost:8081/api/orders/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "Cancelled" }),
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(`Failed to cancel order: ${res.status} - ${errorText}`);
+        }
+        // Check if response has content before trying to parse as JSON
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          return res.json();
+        }
+        return { success: true }; // Fallback for non-JSON responses
+      })
+      .then((response) => {
+        console.log("Order cancelled successfully", response);
+        // Remove cancelled order from state
+        setOrders((prevOrders) => prevOrders.filter((order) => order.id !== id));
+        setFilteredOrders((prevOrders) => prevOrders.filter((order) => order.id !== id));
+        toast.success("Order cancelled successfully!", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      })
+      .catch((error) => {
+        console.error("Error cancelling order:", error);
+        // Revert to server state on error
+        fetchOrders();
+        toast.error(`Failed to cancel order: ${error.message}`, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      });
   };
 
   useEffect(() => {
@@ -250,9 +293,31 @@ const CustomerOrders = () => {
                         </table>
                       </div>
 
-                      <p className="text-gray-700">
-                        📍 <strong>Delivery Address:</strong> {order.address}
-                      </p>
+                      <div className="mt-4 space-y-2">
+                        <p className="text-gray-700">
+                          📍 <strong>Delivery Address:</strong> {order.address}
+                        </p>
+                        <p className="text-gray-700">
+                          📞 <strong>Shop Phone:</strong> {order.shopPhone}
+                        </p>
+                        {order.status === "Pending" && (
+                          <button
+                            onClick={() => {
+                              if (window.confirm("Are you sure you want to cancel this order?")) {
+                                updateStatus(order.id);
+                              }
+                            }}
+                            className="mt-2 px-4 py-2 bg-red-500 text-white font-medium rounded-md shadow-md hover:bg-red-600 transition"
+                          >
+                            Cancel Order
+                          </button>
+                        )}
+                        {order.status === "Confirmed" && (
+                          <p className="text-gray-500 italic">
+                            This order is confirmed and cannot be cancelled
+                          </p>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -263,8 +328,9 @@ const CustomerOrders = () => {
       </table>
 
       <Footer />
+      <ToastContainer />
     </div>
   );
 };
 
-export default CustomerOrders;  
+export default CustomerOrders;

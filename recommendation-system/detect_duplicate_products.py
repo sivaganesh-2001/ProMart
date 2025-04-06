@@ -1,5 +1,6 @@
 import pymongo
 import pandas as pd
+from bson import ObjectId  # Import ObjectId for MongoDB updates
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -12,7 +13,7 @@ master_products_collection = db["master_products"]
 # **Step 2: Fetch All Products**
 products = list(products_collection.find({}, {"_id": 1, "productName": 1, "brand": 1}))
 if not products:
-    print("No products to process.")
+    print("❌ No products to process.")
     exit()
 
 df = pd.DataFrame(products).fillna("")  # Handle missing values
@@ -32,10 +33,11 @@ similarity_matrix = cosine_similarity(tfidf_matrix)
 # **Step 5: Group Similar Products into Clusters**
 threshold = 0.8  # Similarity threshold
 clusters = {}  # Store product clusters
+product_to_master = {}  # Track master ID for each product
 assigned = set()  # Track assigned products
 
 for i, row in df.iterrows():
-    product_id = str(row["_id"])
+    product_id = str(row["_id"])  # Convert to string for mapping
     
     if product_id in assigned:
         continue  # Skip already grouped products
@@ -43,6 +45,7 @@ for i, row in df.iterrows():
     # Create a new master product ID
     new_master_id = f"m{len(clusters) + 1}"
     clusters[new_master_id] = {product_id}  # Add the first product to the cluster
+    product_to_master[product_id] = new_master_id
     assigned.add(product_id)
 
     # Check similarity with other products
@@ -51,13 +54,8 @@ for i, row in df.iterrows():
             similar_product_id = str(df.iloc[j]["_id"])
             if similar_product_id not in assigned:
                 clusters[new_master_id].add(similar_product_id)
+                product_to_master[similar_product_id] = new_master_id
                 assigned.add(similar_product_id)
-
-# **Step 6: Insert Master Products into MongoDB**
-# if clusters:
-#     master_products_collection.insert_many(
-#         [{"_id": master_id, "productIds": list(product_ids)} for master_id, product_ids in clusters.items()]
-#     )
 
 # **Step 6: Upsert Master Products into MongoDB**
 for master_id, product_ids in clusters.items():
@@ -67,11 +65,22 @@ for master_id, product_ids in clusters.items():
         upsert=True  # If master_id exists, update it; otherwise, insert a new one
     )
 
+# **Step 7: Update Individual Products with Master ID**
+bulk_updates = [
+    pymongo.UpdateOne(
+        {"_id": ObjectId(product_id)},  #  Convert product_id to ObjectId
+        {"$set": {"masterId": master_id}}
+    )
+    for product_id, master_id in product_to_master.items()
+]
 
-# **Step 7: Display Summary**
-total_master_ids = len(clusters)
-total_grouped_products = sum(len(products) for products in clusters.values())
+if bulk_updates:
+    result = products_collection.bulk_write(bulk_updates)
+    print(f" {result.modified_count} products updated with masterId.")
 
-print(f"✅ {total_master_ids} new master products created.")
-print(f"📦 Total number of products grouped: {total_grouped_products}")
-print(f"📊 Average products per master ID: {total_grouped_products / total_master_ids:.2f}")
+# **Step 8: Debugging Prints**
+print("\n🔍 Sample Master ID Assignments:")
+for product_id, master_id in list(product_to_master.items())[:5]:  # Show first 5
+    print(f"Product: {product_id} -> Master ID: {master_id}")
+
+print("\n Script execution completed successfully.")

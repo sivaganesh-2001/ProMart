@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import AddToCartButton from "../components/AddToCartButton";
 
 const ProductDetailsPage = () => {
@@ -69,14 +71,18 @@ const ProductDetailsPage = () => {
             <span className="font-semibold">Quantity:</span> {product.netQuantity} {product.unit}
           </p>
 
-          {/* Price Section (Moved Below, Increased Size) */}
+          {/* Price Section */}
           <p className="text-2xl font-bold text-gray-900 mt-4">
             <span className="font-semibold">Price:</span> ₹{product.price}
           </p>
 
           <div className="flex items-center gap-4">
-            {/* Add to Cart Button */}
-            <AddToCartButton product={product} shopId={shopId} />
+            {/* Add to Cart Button with stock check */}
+            <AddToCartButton 
+              product={product} 
+              shopId={shopId} 
+              stockStatus={stockStatus}
+            />
 
             {/* Go to Cart Button */}
             <button

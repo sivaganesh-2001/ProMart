@@ -179,8 +179,10 @@ const CustomerOrderHistory = () => {
                   <td className="border p-2 text-center">{index + 1}</td>
                   <td className="border p-2 text-center">{order.shopName}</td>
                   <td className="border p-2 text-center">₹{order.totalAmount.toFixed(2)}</td>
-                  <td className={`border p-2 text-center font-semibold ${statusColors[order.status]}`}>
-                    {order.status}
+                  <td className="border p-2 text-center">
+                    <span className={`px-2 py-1 rounded ${statusColors[order.status]}`}>
+                      {order.status}
+                    </span>
                   </td>
                   <td className="border p-2 text-center">
                     <button
@@ -220,7 +222,7 @@ const CustomerOrderHistory = () => {
 
                       <div className="overflow-x-auto mt-4">
                         <table className="w-full border border-gray-300 bg-white shadow-sm rounded-lg">
-                          <thead className="bg-gray-100">
+                          <thead className=" bg-gray-100">
                             <tr>
                               <th className="border p-2">Product Name</th>
                               <th className="border p-2">Brand</th>

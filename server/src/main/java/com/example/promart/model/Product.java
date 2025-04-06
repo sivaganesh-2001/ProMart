@@ -26,11 +26,11 @@ public class Product {
     private String productCategory; // ID of the product category
 
 
+    private String masterProductId;
+
     private String imageUrl;
     private String sellerId;
-   // private String masterProductId;  // New Field to Link Master Product
-
-
+    // private String masterProductId; // New Field to Link Master Product
 
     @DBRef
     private String sellerEmail;
@@ -100,11 +100,11 @@ public class Product {
     }
 
     // public String getMasterProductId() {
-    //     return masterProductId;
+    // return masterProductId;
     // }
 
     // public void setMasterProductId(String masterProductId) {
-    //     this.masterProductId = masterProductId;
+    // this.masterProductId = masterProductId;
     // }
 
     public String getUnit() {
@@ -194,8 +194,8 @@ public class Product {
         this.category = category;
         this.brand = brand;
         this.price = price;
-        this.netQuantity=netQuantity;
-        //this.sellerId=sellerId;
+        this.netQuantity = netQuantity;
+        // this.sellerId=sellerId;
         this.stock = stock;
         this.unit = unit;
         this.description = description;
@@ -207,7 +207,7 @@ public class Product {
         this.customerRetentionRate = 0;
         this.topCategory = topCategory; // Set top category
         this.productCategory = productCategory; // Set product category
-    
+
         this.dailySales = new HashMap<>();
     }
 
@@ -216,7 +216,8 @@ public class Product {
 
     // Method to update stock and sales analytics
     public void reduceStock(int quantity, double sellingPrice) {
-        if (quantity <= 0) throw new RuntimeException("Quantity must be greater than 0");
+        if (quantity <= 0)
+            throw new RuntimeException("Quantity must be greater than 0");
         if (this.stock >= quantity) {
             this.stock -= quantity;
             this.soldCount += quantity;
@@ -225,16 +226,17 @@ public class Product {
             // Update daily sales record
             String today = LocalDateTime.now().toLocalDate().toString();
             this.dailySales.put(today, this.dailySales.getOrDefault(today, 0) + quantity);
-            
+
             // Update average selling price dynamically
             this.averageSellingPrice = this.totalRevenue / this.soldCount;
         } else {
             throw new RuntimeException("Insufficient stock for product: " + this.productName);
         }
     }
-    
+
     public void reduceStock(int quantity) {
-        if (quantity <= 0) throw new RuntimeException("Quantity must be greater than 0");
+        if (quantity <= 0)
+            throw new RuntimeException("Quantity must be greater than 0");
         if (this.stock >= quantity) {
             this.stock -= quantity;
         }
@@ -254,5 +256,29 @@ public class Product {
 
     public void setSellerEmail(String sellerEmail) {
         this.sellerEmail = sellerEmail;
+    }
+
+    public String getMasterProductId() {
+        return masterProductId;
+    }
+
+    public void setMasterProductId(String masterProductId) {
+        this.masterProductId = masterProductId;
+    }
+
+    public String getTopCategory() {
+        return topCategory;
+    }
+
+    public void setTopCategory(String topCategory) {
+        this.topCategory = topCategory;
+    }
+
+    public String getProductCategory() {
+        return productCategory;
+    }
+
+    public void setProductCategory(String productCategory) {
+        this.productCategory = productCategory;
     }
 }

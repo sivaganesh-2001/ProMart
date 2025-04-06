@@ -215,8 +215,13 @@ const OrderPage = () => {
   };
 
   const validateAndProceed = (paymentType) => {
-    if (loadingShop || !userAddress?.name || !userAddress?.address || !userAddress?.phone || !deliveryCoordinates) {
-      toast.warn("Please wait for shop details to load and fill in all address fields and select a delivery location before proceeding.");
+    if (loadingShop || !userAddress?.name || !userAddress?.address || !userAddress?.phone) {
+      toast.warn("Please wait for shop details to load and fill in all address fields before proceeding.");
+      return;
+    }
+
+    if (!deliveryCoordinates) {
+      toast.warn("* Please select a delivery location on the map before proceeding. This is mandatory.");
       return;
     }
 
@@ -227,11 +232,6 @@ const OrderPage = () => {
 
     if (!/^\d{10}$/.test(userAddress.phone)) {
       toast.warn("Invalid mobile number. It should be 10 digits.");
-      return;
-    }
-
-    if (deliveryCharge === 0) {
-      toast.warn("Please select a valid delivery location to calculate charges.");
       return;
     }
 
@@ -255,8 +255,13 @@ const OrderPage = () => {
   };
 
   const validateAndPay = (paymentType) => {
-    if (loadingShop || !userAddress?.name || !userAddress?.address || !userAddress?.phone || !deliveryCoordinates) {
-      toast.warn("Please wait for shop details to load and fill in all address fields and select a delivery location before proceeding.");
+    if (loadingShop || !userAddress?.name || !userAddress?.address || !userAddress?.phone) {
+      toast.warn("Please wait for shop details to load and fill in all address fields before proceeding.");
+      return;
+    }
+
+    if (!deliveryCoordinates) {
+      toast.warn("* Please select a delivery location on the map before proceeding. This is mandatory.");
       return;
     }
 
@@ -267,11 +272,6 @@ const OrderPage = () => {
 
     if (!/^\d{10}$/.test(userAddress.phone)) {
       toast.warn("Invalid mobile number. It should be 10 digits.");
-      return;
-    }
-
-    if (deliveryCharge === 0) {
-      toast.warn("Please select a valid delivery location to calculate charges.");
       return;
     }
 
@@ -345,7 +345,11 @@ const OrderPage = () => {
                   <img src={product.imageUrl} alt={product.productName} className="h-[80px] w-[80px] rounded-md object-cover" />
                   <div className="ml-4 font-medium flex-1">
                     <p className="text-[16px]">{product.productName}</p>
-                    <p className="font-semibold text-[18px]">₹{product.price}</p>
+                    <div className="flex justify-start items-center">
+                      <p className="text-[16px] mr-2">{product.netQuantity}</p>
+                      <p className="text-[16px]">{product.unit}</p>
+                    </div>
+                    <p className="font-semibold text-[18px] text-left">₹{product.price}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => updateQuantity(productId, -1)} className="bg-red-500 text-white px-3 py-1 rounded">-</button>
@@ -363,8 +367,8 @@ const OrderPage = () => {
             })}
           </div>
 
-          {/* New Delivery Location Card */}
-          <div className="h-[200px] p-4 bg-white rounded-lg shadow-lg">
+          {/* Mandatory Delivery Location Card (Shrunk) */}
+          <div className="h-[150px] p-4 bg-white rounded-lg shadow-lg">
             <button
               onClick={() => setShowMap(true)}
               className="bg-blue-500 text-white px-6 py-2 rounded-lg w-full"
@@ -374,10 +378,9 @@ const OrderPage = () => {
             </button>
 
             {deliveryCoordinates && shopLocation && !loadingShop && (
-              <div className="mt-4">
+              <div className="mt-2">
                 <p><strong>Selected Location:</strong> {deliveryCoordinates.address}</p>
                 <p><strong>Distance from Shop:</strong> {calculateDistance(shopLocation, deliveryCoordinates).toFixed(2)} km</p>
-                <p><strong>Delivery Charge:</strong> ₹{deliveryCharge}</p>
               </div>
             )}
           </div>
@@ -388,8 +391,8 @@ const OrderPage = () => {
           <div>
             <h3 className="text-lg font-semibold mb-4">Price Details</h3>
             <p>MRP: ₹{totalMRP}</p>
-            <p>Delivery Fee: ₹{deliveryCharge || "Not calculated"}</p>
-            <p className="font-bold mt-2">Total: ₹{finalTotal || totalMRP}</p>
+            <p>Delivery Fee: {!deliveryCoordinates ? "Select Delivery Location" : `₹${deliveryCharge}`}</p>
+            <p className="font-bold mt-2">Total: {!deliveryCoordinates ? "Select Delivery Location" : `₹${finalTotal}`}</p>
 
             <div className="mt-4 border p-4 rounded-lg bg-gray-100 shadow-md">
               <h3 className="text-lg font-semibold mb-2">Delivery Address</h3>
@@ -462,15 +465,13 @@ const OrderPage = () => {
           <div>
             <button
               onClick={() => validateAndProceed("cod")}
-              className="bg-blue-500 text-white px-6 py-2 rounded-lg mt-4 w-full"
-              disabled={loadingShop || !deliveryCoordinates}
+              className="bg-blue-500 text-white px-6 py-2 rounded-lg mt-4 w-full cursor-pointer"
             >
               Cash on Delivery
             </button>
             <button
               onClick={validateAndPay}
-              className="bg-green-500 text-white px-6 py-2 rounded-lg mt-4 w-full"
-              disabled={loadingShop || !deliveryCoordinates}
+              className="bg-green-500 text-white px-6 py-2 rounded-lg mt-4 w-full cursor-pointer"
             >
               Continue to Payment
             </button>

@@ -17,6 +17,7 @@ const Products = () => {
     stock: 0,
     unit: "",
     description: "",
+    netQuantity: "",
   });
 
   const [loading, setLoading] = useState(true);
@@ -112,6 +113,7 @@ const Products = () => {
       stock: product.stock,
       unit: product.unit,
       description: product.description,
+      netQuantity: product.netQuantity,
     });
   };
 
@@ -144,6 +146,7 @@ const Products = () => {
       stock: 0,
       unit: "",
       description: "",
+      netQuantity: "",
     });
   };
 
@@ -187,7 +190,8 @@ const Products = () => {
               <th className="border p-2 text-left">Title</th>
               <th className="border p-2">Brand</th>
               <th className="border p-2">Price</th>
-              <th className="border p-2">Stock Count</th>
+              <th className="border p-2">Net Quantity</th>
+              <th className="border p-2">Stock </th>
               <th className="border p-2">Stock Status</th>
               <th className="border p-2">Update</th>
               <th className="border p-2">Delete</th>
@@ -212,7 +216,7 @@ const Products = () => {
                   )}
                   <br />
                   <span className="text-sm text-gray-500">
-                    {editingProductId === product.id ? (
+                    {/* {editingProductId === product.id ? (
                       <textarea
                         value={editFormData.netQuantity}
                         onChange={(e) => setEditFormData({ ...editFormData, netQuantity: e.target.value})}
@@ -223,7 +227,7 @@ const Products = () => {
               
                     )
 
-                    }
+                    } */}
                   </span>
                 </td>
                 <td className="border p-2">
@@ -253,13 +257,25 @@ const Products = () => {
                 <td className="border p-2">
                   {editingProductId === product.id ? (
                     <input
+                      type="text"
+                      value={editFormData.netQuantity}
+                      onChange={(e) => setEditFormData({ ...editFormData, netQuantity: e.target.value })}
+                      className="border p-1 rounded w-full"
+                    />
+                  ) : (
+                    `${product.netQuantity} ${product.unit}` // Show netQuantity with unit
+                  )}
+                </td>
+                <td className="border p-2">
+                  {editingProductId === product.id ? (
+                    <input
                       type="number"
                       value={editFormData.stock}
                       onChange={(e) => setEditFormData({ ...editFormData, stock: e.target.value })}
                       className="border p-1 rounded w-full"
                     />
                   ) : (
-                    `${product.stock} ${product.unit}`
+                    `${product.stock}`
                   )}
                 </td>
                 <td className="border p-2">

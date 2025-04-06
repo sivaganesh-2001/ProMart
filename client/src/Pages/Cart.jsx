@@ -27,7 +27,7 @@ function Cart() {
       const response = await axios.get(`http://localhost:8081/api/cart/${userEmail}`);
       if (response.data && response.data.shops) {
         setCartData(response.data.shops);
-        console.log(response.data);
+        console.log('shop',response.data);
         fetchShopDetails(Object.keys(response.data.shops));
       }
     } catch (error) {

@@ -131,9 +131,11 @@ const OrderHistory = () => {
                     <td className="border p-2">{order.customerEmail}</td>
                     <td className="border p-2 text-center">{order.phone}</td>
                     <td className="border p-2 text-center">₹{order.totalAmount.toFixed(2)}</td>
-                    <td className={`border p-2 text-center font-semibold ${statusColors[order.status]}`}>
+                    <td className="border p-2 text-center">
+                    <span className={`px-2 py-1 rounded ${statusColors[order.status]}`}>
                       {order.status}
-                    </td>
+                    </span>
+                  </td>
                     <td className="border p-2 text-center">
                       <button
                         onClick={() => setSelectedOrder(selectedOrder === order.id ? null : order.id)}
