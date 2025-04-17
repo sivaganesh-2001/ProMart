@@ -57,18 +57,23 @@ for i, row in df.iterrows():
                 product_to_master[similar_product_id] = new_master_id
                 assigned.add(similar_product_id)
 
-# **Step 6: Upsert Master Products into MongoDB**
+# **Step 6: Upsert Master Products into MongoDB with Ratings Fields**
 for master_id, product_ids in clusters.items():
     master_products_collection.update_one(
         {"_id": master_id},
-        {"$set": {"productIds": list(product_ids)}},
+        {"$set": {
+            "productIds": list(product_ids),
+            "ratings": [],  # Initialize empty ratings list
+            "averageRating": 0.0,  # Initialize average rating
+            "totalRatings": 0  # Initialize total ratings count
+        }},
         upsert=True  # If master_id exists, update it; otherwise, insert a new one
     )
 
 # **Step 7: Update Individual Products with Master ID**
 bulk_updates = [
     pymongo.UpdateOne(
-        {"_id": ObjectId(product_id)},  #  Convert product_id to ObjectId
+        {"_id": ObjectId(product_id)},  # Convert product_id to ObjectId
         {"$set": {"masterId": master_id}}
     )
     for product_id, master_id in product_to_master.items()
@@ -76,11 +81,11 @@ bulk_updates = [
 
 if bulk_updates:
     result = products_collection.bulk_write(bulk_updates)
-    print(f" {result.modified_count} products updated with masterId.")
+    print(f"✅ {result.modified_count} products updated with masterId.")
 
 # **Step 8: Debugging Prints**
 print("\n🔍 Sample Master ID Assignments:")
 for product_id, master_id in list(product_to_master.items())[:5]:  # Show first 5
     print(f"Product: {product_id} -> Master ID: {master_id}")
 
-print("\n Script execution completed successfully.")
+print("\n✅ Script execution completed successfully.")

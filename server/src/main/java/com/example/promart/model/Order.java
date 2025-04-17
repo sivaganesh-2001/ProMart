@@ -26,19 +26,9 @@ public class Order {
     private String status; // pending, confirmed, cancelled
     @Indexed
     private LocalDateTime orderDate; // This should be a normal field
-    private LocalDateTime statusUpdatedAt;
-    private LocalDateTime processingTime;
-
     @CreatedDate
     @Indexed
     private LocalDateTime createdAt;
-
-    // Analytics Fields
-    private double discountApplied; // Total discount on the order
-    private double taxAmount; // Tax added to the totalAmount
-    private double profitMargin; // Revenue analysis field
-    private Duration orderProcessingTime; // Time from order placement to confirmation
-    private String customerType; // New or Returning customer
 
     public Order() {}
 
@@ -53,7 +43,7 @@ public class Order {
         this.phone = phone;
         this.status = status;
         this.orderDate = LocalDateTime.now(); // Set the orderDate to the current date and time
-        this.statusUpdatedAt = LocalDateTime.now();
+    
     }
 
     // Getters and Setters
@@ -139,67 +129,12 @@ public class Order {
         this.status = status;
     }
 
-    public LocalDateTime getStatusUpdatedAt() {
-        return statusUpdatedAt;
-    }
-
-    public void setStatusUpdatedAt(LocalDateTime statusUpdatedAt) {
-        this.statusUpdatedAt = statusUpdatedAt;
-    }
-
-    public LocalDateTime getProcessingTime() {
-        return processingTime;
-    }
-
-    public void setProcessingTime(LocalDateTime processingTime) {
-        this.processingTime = processingTime;
-    }
-
+  
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
-    }
-
-    public double getDiscountApplied() {
-        return discountApplied;
-    }
-
-    public void setDiscountApplied(double discountApplied) {
-        this.discountApplied = discountApplied;
-    }
-
-    public double getTaxAmount() {
-        return taxAmount;
-    }
-
-    public void setTaxAmount(double taxAmount) {
-        this.taxAmount = taxAmount;
-    }
-
-    public double getProfitMargin() {
-        return profitMargin;
-    }
-
-    public void setProfitMargin(double profitMargin) {
-        this.profitMargin = profitMargin;
-    }
-
-    public Duration getOrderProcessingTime() {
-        return orderProcessingTime;
-    }
-
-    public void setOrderProcessingTime(Duration orderProcessingTime) {
-        this.orderProcessingTime = orderProcessingTime;
-    }
-
-    public String getCustomerType() {
-        return customerType;
-    }
-
-    public void setCustomerType(String customerType) {
-        this.customerType = customerType;
     }
 }

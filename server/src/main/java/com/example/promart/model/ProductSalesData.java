@@ -25,7 +25,8 @@ public class ProductSalesData {
     }
 
     // Constructors
-    public ProductSalesData() {}
+    public ProductSalesData() {
+    }
 
     public ProductSalesData(String productId, int totalSoldQuantity) {
         this.productId = productId;
@@ -33,9 +34,19 @@ public class ProductSalesData {
     }
 
     // Getters and Setters
-    public String getProductId() { return productId; }
-    public void setProductId(String productId) { this.productId = productId; }
+    public String getProductId() {
+        return productId;
+    }
 
-    public int getTotalSoldQuantity() { return totalSoldQuantity; }
-    public void setTotalSoldQuantity(int totalSoldQuantity) { this.totalSoldQuantity = totalSoldQuantity; }
+    public void setProductId(String productId) {
+        this.productId = productId;
+    }
+
+    public int getTotalSoldQuantity() {
+        return totalSoldQuantity;
+    }
+
+    public void setTotalSoldQuantity(int totalSoldQuantity) {
+        this.totalSoldQuantity = totalSoldQuantity;
+    }
 }

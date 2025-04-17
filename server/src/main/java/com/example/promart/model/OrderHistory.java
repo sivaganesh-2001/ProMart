@@ -19,28 +19,20 @@ import org.springframework.data.mongodb.core.mapping.Document;
         private String sellerId;
         private List<ProductDetails> items;
         private double totalAmount;
-        private double profitMargin;
-        private double discountApplied;
-        private double taxAmount;
         private String paymentMethod;
         private String address;
         private String phone;
         @Indexed
         private String status; // delivered, cancelled
-        private String customerType; // new, returning
-       
         private LocalDateTime completedDate;
+        private LocalDateTime orderDate;
 
-    private LocalDateTime orderDate;
-    private LocalDateTime statusUpdatedAt;
-    private LocalDateTime processingTime;
+    // @CreatedDate
+    // @Indexed
+    // private LocalDateTime createdAt;
 
-    @CreatedDate
-    @Indexed
-    private LocalDateTime createdAt;
-
-    private Duration orderProcessingTime;
-    private String cancellationReason;
+    // private Duration orderProcessingTime;
+    // private String cancellationReason;
 
     public OrderHistory() {}
 
@@ -54,19 +46,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
         this.address = order.getAddress();
         this.phone = order.getPhone();
         this.status = status;
-        this.orderDate = order.getOrderDate();
-        this.statusUpdatedAt = LocalDateTime.now();
-        this.cancellationReason = cancellationReason;
-        this.discountApplied = order.getDiscountApplied();
-        this.taxAmount = order.getTaxAmount();
-        this.profitMargin = order.getProfitMargin();
-        this.customerType = order.getCustomerType();
-        this.createdAt = LocalDateTime.now();
-
-        if (order.getProcessingTime() != null) {
-            this.processingTime = order.getProcessingTime();
-            this.orderProcessingTime = Duration.between(order.getOrderDate(), order.getProcessingTime());
-        }
     }
 
     // Getters and Setters
@@ -119,29 +98,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
         this.totalAmount = totalAmount;
     }
 
-    public double getProfitMargin() {
-        return profitMargin;
-    }
-
-    public void setProfitMargin(double profitMargin) {
-        this.profitMargin = profitMargin;
-    }
-
-    public double getDiscountApplied() {
-        return discountApplied;
-    }
-
-    public void setDiscountApplied(double discountApplied) {
-        this.discountApplied = discountApplied;
-    }
-
-    public double getTaxAmount() {
-        return taxAmount;
-    }
-
-    public void setTaxAmount(double taxAmount) {
-        this.taxAmount = taxAmount;
-    }
+    
 
     public String getPaymentMethod() {
         return paymentMethod;
@@ -173,62 +130,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
     public void setStatus(String status) {
         this.status = status;
-    }
-
-    public String getCustomerType() {
-        return customerType;
-    }
-
-    public void setCustomerType(String customerType) {
-        this.customerType = customerType;
-    }
-
-    public LocalDateTime getOrderDate() {
-        return orderDate;
-    }
-
-    public void setOrderDate(LocalDateTime orderDate) {
-        this.orderDate = orderDate;
-    }
-
-    public LocalDateTime getStatusUpdatedAt() {
-        return statusUpdatedAt;
-    }
-
-    public void setStatusUpdatedAt(LocalDateTime statusUpdatedAt) {
-        this.statusUpdatedAt = statusUpdatedAt;
-    }
-
-    public LocalDateTime getProcessingTime() {
-        return processingTime;
-    }
-
-    public void setProcessingTime(LocalDateTime processingTime) {
-        this.processingTime = processingTime;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Duration getOrderProcessingTime() {
-        return orderProcessingTime;
-    }
-
-    public void setOrderProcessingTime(Duration orderProcessingTime) {
-        this.orderProcessingTime = orderProcessingTime;
-    }
-
-    public String getCancellationReason() {
-        return cancellationReason;
-    }
-
-    public void setCancellationReason(String cancellationReason) {
-        this.cancellationReason = cancellationReason;
     }
 
     public OrderHistory(Order order) {

@@ -45,8 +45,6 @@ public class ApproveSellerService {
                     approveSeller.getPhone(),
                     approveSeller.getAddress(),
                     approveSeller.getCategories(),
-                    approveSeller.getCustomCategory(),
-                    approveSeller.getPassword(),
                     approveSeller.getShopImageUrl(),
                     approveSeller.getLocation()
                 );

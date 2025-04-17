@@ -16,11 +16,12 @@ public class SalesSummary {
     private List<ProductSalesData> topSlowMoving;
 
     // Constructors
-    public SalesSummary() {}
+    public SalesSummary() {
+    }
 
-    public SalesSummary(String sellerId, LocalDateTime lastUpdated, 
-                        List<ProductSalesData> topFastMoving, 
-                        List<ProductSalesData> topSlowMoving) {
+    public SalesSummary(String sellerId, LocalDateTime lastUpdated,
+            List<ProductSalesData> topFastMoving,
+            List<ProductSalesData> topSlowMoving) {
         this.sellerId = sellerId;
         this.lastUpdated = lastUpdated;
         this.topFastMoving = topFastMoving;
@@ -28,18 +29,43 @@ public class SalesSummary {
     }
 
     // Getters and Setters
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public String getId() {
+        return id;
+    }
 
-    public String getSellerId() { return sellerId; }
-    public void setSellerId(String sellerId) { this.sellerId = sellerId; }
+    public void setId(String id) {
+        this.id = id;
+    }
 
-    public LocalDateTime getLastUpdated() { return lastUpdated; }
-    public void setLastUpdated(LocalDateTime lastUpdated) { this.lastUpdated = lastUpdated; }
+    public String getSellerId() {
+        return sellerId;
+    }
 
-    public List<ProductSalesData> getTopFastMoving() { return topFastMoving; }
-    public void setTopFastMoving(List<ProductSalesData> topFastMoving) { this.topFastMoving = topFastMoving; }
+    public void setSellerId(String sellerId) {
+        this.sellerId = sellerId;
+    }
 
-    public List<ProductSalesData> getTopSlowMoving() { return topSlowMoving; }
-    public void setTopSlowMoving(List<ProductSalesData> topSlowMoving) { this.topSlowMoving = topSlowMoving; }
+    public LocalDateTime getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setLastUpdated(LocalDateTime lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
+    public List<ProductSalesData> getTopFastMoving() {
+        return topFastMoving;
+    }
+
+    public void setTopFastMoving(List<ProductSalesData> topFastMoving) {
+        this.topFastMoving = topFastMoving;
+    }
+
+    public List<ProductSalesData> getTopSlowMoving() {
+        return topSlowMoving;
+    }
+
+    public void setTopSlowMoving(List<ProductSalesData> topSlowMoving) {
+        this.topSlowMoving = topSlowMoving;
+    }
 }

@@ -2,7 +2,9 @@ package com.example.promart.service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -11,27 +13,28 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.Point;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.promart.model.ApproveSeller;
 import com.example.promart.model.Product;
-import com.example.promart.model.Rating;
 import com.example.promart.model.Seller;
 import com.example.promart.repository.ApproveSellerRepository;
 import com.example.promart.repository.ProductRepository;
-import com.example.promart.repository.RatingRepository;
 import com.example.promart.repository.SellerRepository;
 
 @Service
 public class SellerServiceImpl implements SellerService {
 
+    @Override
+    public Seller getSellerById(String sellerId) {
+        return sellerRepository.findById(sellerId)
+                .orElseThrow(() -> new RuntimeException("Seller not found with ID: " + sellerId));
+    }
+
     private static final Logger logger = LoggerFactory.getLogger(SellerServiceImpl.class);
 
     @Autowired
     private SellerRepository sellerRepository;
-
-    @Autowired
-    private RatingRepository ratingRepository;
-    
     @Autowired
     private ApproveSellerRepository approveSellerRepository;
 
@@ -87,11 +90,7 @@ public class SellerServiceImpl implements SellerService {
                                                                  // longitude
             logger.info("Fetching nearby sellers for location: {}, {}", latitude, longitude);
             // Fetch the nearby sellers using the repository method
-            List<Seller> sellers = sellerRepository.findByLocationNear(longitude, latitude, maxDistanceKm * 1000); // Convert
-                                                                                                                   // km
-                                                                                                                   // to
-                                                                                                                   // meters
-
+            List<Seller> sellers = sellerRepository.findByLocationNear(longitude, latitude, maxDistanceKm * 1000); 
             logger.info("Found {} sellers near location: {}, {}", sellers.size(), latitude, longitude);
             return sellers;
         } catch (Exception e) {
@@ -100,10 +99,7 @@ public class SellerServiceImpl implements SellerService {
         }
     }
 
-    public Seller getSellerById(String _id) {
-        return sellerRepository.findById(_id).orElseThrow(() -> new RuntimeException("Seller not found"));
-    }
-
+ 
     public List<Product> searchProducts(String shopId, String query) {
         // Find the seller by ID
         Optional<Seller> sellerOptional = sellerRepository.findById(shopId);
@@ -162,8 +158,6 @@ public ApproveSeller registerSellerApprove(ApproveSeller approveSeller) {
                     approveSeller.getPhone(),
                     approveSeller.getAddress(),
                     approveSeller.getCategories(),
-                    approveSeller.getCustomCategory(),
-                    approveSeller.getPassword(),
                     approveSeller.getShopImageUrl(),
                     approveSeller.getLocation());
 
@@ -185,29 +179,6 @@ public ApproveSeller registerSellerApprove(ApproveSeller approveSeller) {
         return "Seller not found!";
     }
 
-    public Rating addRating(String sellerId, String customerEmail, int rating, String review) {
-        // Validate rating
-        if (rating < 1 || rating > 5) {
-            throw new IllegalArgumentException("Rating must be between 1 and 5");
-        }
-
-        // Create new rating
-        Rating newRating = new Rating(sellerId, customerEmail, rating, review, LocalDateTime.now());
-        Rating savedRating = ratingRepository.save(newRating);
-
-        // Update seller's rating stats
-        Seller seller = sellerRepository.findById(sellerId)
-                .orElseThrow(() -> new RuntimeException("Seller not found with ID: " + sellerId));
-        seller.updateRatingStats(rating); // Assume this method exists in Seller model
-        sellerRepository.save(seller);
-
-        return savedRating;
-    }
-
-    public List<Rating> getRatingsForSeller(String sellerId) {
-        return ratingRepository.findBySellerId(sellerId);
-    }
-
     public boolean approveOrRejectSeller(String sellerId, String status) {
         Optional<ApproveSeller> approveSellerOptional = approveSellerRepository.findById(sellerId);
 
@@ -227,8 +198,6 @@ public ApproveSeller registerSellerApprove(ApproveSeller approveSeller) {
             newSeller.setPhone(approveSeller.getPhone());
             newSeller.setAddress(approveSeller.getAddress());
             newSeller.setCategories(approveSeller.getCategories());
-            newSeller.setCustomCategory(approveSeller.getCustomCategory());
-            newSeller.setPassword(approveSeller.getPassword());
             newSeller.setShopImageUrl(approveSeller.getShopImageUrl());
             newSeller.setLocation(approveSeller.getLocation());
             newSeller.setProducts(approveSeller.getProducts());
@@ -243,8 +212,63 @@ public ApproveSeller registerSellerApprove(ApproveSeller approveSeller) {
         return true;
     }
 
+    @Override
     public Seller getSeller(String sellerId) {
         return sellerRepository.findById(sellerId)
                 .orElseThrow(() -> new RuntimeException("Seller not found"));
+    }
+
+    // @Override
+    // @Transactional
+    // public Seller rateSeller(String sellerId, String userId, double rating) {
+    //     logger.info("Attempting to rate seller with ID: {}", sellerId);
+        
+    //     if (rating < 1 || rating > 5) {
+    //         throw new IllegalArgumentException("Rating must be between 1 and 5");
+    //     }
+    
+    //     Seller seller = sellerRepository.findById(sellerId)
+    //             .orElseThrow(() -> {
+    //                 logger.error("Seller with ID {} not found", sellerId);
+    //                 return new RuntimeException("Seller not found");
+    //             });
+    
+    //     Map<String, Double> ratings = seller.getRatings();
+    //     Double oldRating = ratings.put(userId, rating); // Save the new rating or update existing one
+    
+    //     int totalRatings = seller.getTotalRatings();
+    //     double currentAvg = seller.getAverageRating();
+    
+    //     if (oldRating == null) {
+    //         // New rating: increment totalRatings and update average
+    //         totalRatings += 1;
+    //         seller.setTotalRatings(totalRatings);
+    //         seller.setAverageRating((currentAvg * (totalRatings - 1) + rating) / totalRatings);
+    //     } else {
+    //         // Updated rating: adjust average without changing totalRatings
+    //         seller.setAverageRating((currentAvg * totalRatings - oldRating + rating) / totalRatings);
+    //     }
+    
+    //     logger.info("Updated seller rating: {} with new rating: {} by user: {}", sellerId, rating, userId);
+    //     return sellerRepository.save(seller); // Persist changes to the database
+    // }
+
+
+    @Override
+    @Transactional
+    public Seller rateSeller(String sellerId, String userId, double rating) {
+        logger.info("Attempting to rate seller with ID: {}", sellerId);
+        Seller seller = sellerRepository.findById(sellerId)
+                .orElseThrow(() -> {
+                    logger.error("Seller with ID {} not found", sellerId);
+                    return new RuntimeException("Seller not found");
+                });
+        seller.updateRating(userId, rating);
+        return sellerRepository.save(seller);
+    }
+
+    @Override
+    public Seller findById(String sellerId) {
+        return sellerRepository.findById(sellerId).orElseThrow(() -> new RuntimeException("Seller not found"));
     }
 }

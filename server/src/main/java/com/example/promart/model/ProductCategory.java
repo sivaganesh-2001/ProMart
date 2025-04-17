@@ -11,12 +11,7 @@ import lombok.NoArgsConstructor;
 public class ProductCategory {
     @Id
     private String id;
-    public String getId() {
-        return id;
-    }
-    public void setId(String id) {
-        this.id = id;
-    }
+
 
 
     private String topCategory; // Name of the top-level category
@@ -36,6 +31,12 @@ public class ProductCategory {
         this.name = name;
     }
 
+    public String getId() {
+        return id;
+    }
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String getTopCategory() {
         return topCategory;
@@ -55,8 +56,5 @@ public class ProductCategory {
     public void setName(String name) {
         this.name = name;
     }
-
-
- 
 
 }

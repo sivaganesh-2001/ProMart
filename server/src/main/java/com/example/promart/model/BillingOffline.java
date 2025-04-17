@@ -1,38 +1,37 @@
-    package com.example.promart.model;
+package com.example.promart.model;
 
-    import java.time.LocalDateTime;
-    import java.util.List;
-    import org.springframework.data.annotation.Id;
-    import org.springframework.data.mongodb.core.mapping.Document;
+import java.time.LocalDateTime;
+import java.util.List;
 
-    @Document(collection = "billings_offline")
-    public class BillingOffline {
-        @Id
-        private String id;  
-        private String customerEmail;
-        private String sellerId;
-        private List<ProductDetails> items;
-        private double totalAmount;
-        private String phone;
-        private LocalDateTime orderDate;
-        private LocalDateTime billGeneratedTime;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-        // Analytics Fields
-        private String paymentMethod;  // Cash, Card, UPI, etc.
-        private double discountApplied;
-        private double taxAmount;
-        private double profitMargin;
-        private String mostSoldCategory;
-        private boolean repeatCustomer;
-        private String salesChannel; // Walk-in, Phone Order, App
+@Document(collection = "billings_offline")
+public class BillingOffline {
+    @Id
+    private String id;
+    private String customerEmail;
+    private String sellerId;
+    private List<ProductDetails> items;
+    private double totalAmount;
+    private String phone;
+    private LocalDateTime orderDate;
+    private LocalDateTime billGeneratedTime;
+
+    // Analytics Fields
+    private String paymentMethod; // Cash, Card, UPI, etc.
+    // private double discountApplied;
+    // private double taxAmount;
+    // private double profitMargin;
+    // private String mostSoldCategory;
+    // private boolean repeatCustomer;
+    // private String salesChannel; // Walk-in, Phone Order, App
 
     public BillingOffline() {
     }
 
     public BillingOffline(String customerEmail, String sellerId, List<ProductDetails> items, double totalAmount,
-            String phone, LocalDateTime orderDate, LocalDateTime billGeneratedTime, String paymentMethod,
-            double discountApplied, double taxAmount, double profitMargin, String mostSoldCategory,
-            boolean repeatCustomer, String salesChannel) {
+            String phone, LocalDateTime orderDate, LocalDateTime billGeneratedTime, String paymentMethod) {
         this.customerEmail = customerEmail;
         this.sellerId = sellerId;
         this.items = items;
@@ -41,12 +40,12 @@
         this.orderDate = orderDate;
         this.billGeneratedTime = billGeneratedTime;
         this.paymentMethod = paymentMethod;
-        this.discountApplied = discountApplied;
-        this.taxAmount = taxAmount;
-        this.profitMargin = profitMargin;
-        this.mostSoldCategory = mostSoldCategory;
-        this.repeatCustomer = repeatCustomer;
-        this.salesChannel = salesChannel;
+        // this.discountApplied = discountApplied;
+        // this.taxAmount = taxAmount;
+        // this.profitMargin = profitMargin;
+        // this.mostSoldCategory = mostSoldCategory;
+        // this.repeatCustomer = repeatCustomer;
+        // this.salesChannel = salesChannel;
     }
 
     public String getId() {
@@ -123,51 +122,4 @@
         this.paymentMethod = paymentMethod;
     }
 
-    public double getDiscountApplied() {
-        return discountApplied;
-    }
-
-    public void setDiscountApplied(double discountApplied) {
-        this.discountApplied = discountApplied;
-    }
-
-    public double getTaxAmount() {
-        return taxAmount;
-    }
-
-    public void setTaxAmount(double taxAmount) {
-        this.taxAmount = taxAmount;
-    }
-
-    public double getProfitMargin() {
-        return profitMargin;
-    }
-
-    public void setProfitMargin(double profitMargin) {
-        this.profitMargin = profitMargin;
-    }
-
-    public String getMostSoldCategory() {
-        return mostSoldCategory;
-    }
-
-    public void setMostSoldCategory(String mostSoldCategory) {
-        this.mostSoldCategory = mostSoldCategory;
-    }
-
-    public boolean isRepeatCustomer() {
-        return repeatCustomer;
-    }
-
-    public void setRepeatCustomer(boolean repeatCustomer) {
-        this.repeatCustomer = repeatCustomer;
-    }
-
-    public String getSalesChannel() {
-        return salesChannel;
-    }
-
-    public void setSalesChannel(String salesChannel) {
-        this.salesChannel = salesChannel;
-    }
 }

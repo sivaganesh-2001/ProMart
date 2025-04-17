@@ -2,8 +2,10 @@ package com.example.promart.model;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
+import com.example.promart.dto.Rating;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.geo.Point;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -18,84 +20,43 @@ public class Seller {
     private String id;
     private String shopName;
     private String ownerName;
-    
     @Indexed(unique = true)
     private String email;
-    
     private String phone;
     private String address;
-    
     @DBRef
     private List<Order> orders = new ArrayList<>();
-
     private List<String> categories;
-    
-    private String customCategory;
-    private String password;
     private String shopImageUrl;
-
-    
-
     @Field("location")
     @Indexed(name = "locationIndex")
     private Point location;
 
-
-
     @DBRef
     private List<Product> products = new ArrayList<>();
-    private double averageRating; // Track average rating
-    private int totalRatings;
+    // private Map<String, Double> ratings = new HashMap<>(); // userId -> rating (1
+    // to 5)
 
-    // Rating summary fields
-    private int reviewsCount = 0;          // Average rating (1-5)
-    private String reviewSentiments = "Neutral"; // Summary sentiment
+    private List<Rating> ratings = new ArrayList<>();
 
-     // 🔹 Sales & Performance Analytics
-     private double totalSales;             // Total revenue
-     private int totalOrders;               // Total number of orders
-     private double averageOrderValue;      // Avg. order value = totalSales / totalOrders
-     private List<String> topSellingCategories; // Best performing categories
-     private List<String> highDemandProducts;   // Most frequently searched or ordered items
-     private double repeatCustomerRate;     // Percentage of returning customers
-     private double salesGrowthRate;        // Sales increase percentage over time
-     private double stockTurnoverRate;      // How quickly inventory sells out
-     private double profitMargin;           // Profit percentage
-     private double averageCartSize;        // Avg. number of products per order        // Star rating (1-5)
-     private LocalDateTime lastOrderDate;   // Last order placed (for shop activity)
-      // "Positive", "Neutral", "Negative" (Based on sentiment analysis)
- 
+    private double averageRating = 0.0;
+    private int totalRatings = 0;
 
-    public Seller() {}
+    public Seller() {
+    }
 
-    public Seller(String shopName, String ownerName, String email, String phone, String address, List<String> categories,
-                 String customCategory, String password, String shopImageUrl, Point location) {
+    public Seller(String shopName, String ownerName, String email, String phone, String address,
+            List<String> categories,
+            String shopImageUrl, Point location) {
         this.shopName = shopName;
         this.ownerName = ownerName;
         this.email = email;
         this.phone = phone;
         this.address = address;
         this.categories = categories;
-        this.customCategory = customCategory;
-        this.password = password;
         this.shopImageUrl = shopImageUrl;
         this.location = location;
 
-        //Analytics
-        this.totalSales = 0.0;
-        this.totalOrders = 0;
-        this.averageOrderValue = 0.0;
-        this.topSellingCategories = new ArrayList<>();
-        this.highDemandProducts = new ArrayList<>();
-        this.repeatCustomerRate = 0.0;
-        this.salesGrowthRate = 0.0;
-        this.stockTurnoverRate = 0.0;
-        this.profitMargin = 0.0;
-        this.averageCartSize = 0.0;
-        this.reviewsCount = 0;
-        this.averageRating = 0.0;
-        this.lastOrderDate = null;
-        this.reviewSentiments = "Neutral";
     }
 
     public List<Product> getProducts() {
@@ -106,14 +67,13 @@ public class Seller {
         this.products = products;
     }
 
-    public int getReviewsCount() { return reviewsCount; }
-    public void setReviewsCount(int reviewsCount) { this.reviewsCount = reviewsCount; }
+    public double getAverageRating() {
+        return averageRating;
+    }
 
-    public double getAverageRating() { return averageRating; }
-    public void setAverageRating(double averageRating) { this.averageRating = averageRating; }
-
-    public String getReviewSentiments() { return reviewSentiments; }
-    public void setReviewSentiments(String reviewSentiments) { this.reviewSentiments = reviewSentiments; }
+    public void setAverageRating(double averageRating) {
+        this.averageRating = averageRating;
+    }
 
     public void addProduct(Product product) {
         this.products.add(product);
@@ -185,8 +145,6 @@ public class Seller {
         }
         this.categories = categories;
     }
-    
-    
 
     public void addCategory(String category) {
         if (this.categories.size() < 5) {
@@ -198,22 +156,6 @@ public class Seller {
         this.categories.remove(category);
     }
 
-    public String getCustomCategory() {
-        return customCategory;
-    }
-
-    public void setCustomCategory(String customCategory) {
-        this.customCategory = customCategory;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
     public String getShopImageUrl() {
         return shopImageUrl;
     }
@@ -221,8 +163,6 @@ public class Seller {
     public void setShopImageUrl(String shopImageUrl) {
         this.shopImageUrl = shopImageUrl;
     }
-
-    
 
     public List<Order> getOrders() {
         return orders;
@@ -232,11 +172,63 @@ public class Seller {
         this.orders = orders;
     }
 
+    // public Map<String, Double> getRatings() {
+    // return ratings;
+    // }
+
+    // public void setRatings(Map<String, Double> ratings) {
+    // this.ratings = ratings;
+    // }
+
+    // Getters & Setters
+    public List<Rating> getRatings() {
+        return ratings;
+    }
+
+    public void setRatings(List<Rating> ratings) {
+        this.ratings = ratings;
+    }
+
+    public int getTotalRatings() {
+        return totalRatings;
+    }
+
+    public void setTotalRatings(int totalRatings) {
+        this.totalRatings = totalRatings;
+    }
+
     public void addOrder(Order order) {
         if (this.orders == null) {
             this.orders = new ArrayList<>();
         }
         this.orders.add(order);
+    }
+
+    public void updateRating(String userId, double newRating) {
+        if (newRating < 1 || newRating > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5");
+        }
+
+        Rating existing = null;
+        for (Rating r : ratings) {
+            if (r.getUserId().equals(userId)) {
+                existing = r;
+                break;
+            }
+        }
+
+        if (existing == null) {
+            // New rating
+            Rating rating = new Rating(userId, newRating);
+            ratings.add(rating);
+            totalRatings++;
+            averageRating = ((averageRating * (totalRatings - 1)) + newRating) / totalRatings;
+        } else {
+            // Update existing rating
+            double oldRating = existing.getRating();
+            existing.setRating(newRating);
+            averageRating = ((averageRating * totalRatings) - oldRating + newRating) / totalRatings;
+        }
     }
 
     @Override
@@ -249,112 +241,12 @@ public class Seller {
                 ", phone='" + phone + '\'' +
                 ", address='" + address + '\'' +
                 ", categories=" + categories +
-                ", customCategory='" + customCategory + '\'' +
-                ", password='" + password + '\'' +
                 ", shopImageUrl='" + shopImageUrl + '\'' +
                 ", location=" + location +
                 ", products=" + products +
                 ", orders=" + orders +
-                ", reviewsCount=" + reviewsCount +
                 ", averageRating=" + averageRating +
-                ", reviewSentiments='" + reviewSentiments + '\''  +
                 '}';
-    }
-
-    public double getTotalSales() {
-        return totalSales;
-    }
-
-    public void updateRatingStats(int newRating) {
-        double totalRatingSum = this.averageRating * this.reviewsCount + newRating;
-        this.reviewsCount++;
-        this.averageRating = totalRatingSum / this.reviewsCount;
-    }
-
-    public void setTotalSales(double totalSales) {
-        this.totalSales = totalSales;
-    }
-
-    public int getTotalOrders() {
-        return totalOrders;
-    }
-
-    public void setTotalOrders(int totalOrders) {
-        this.totalOrders = totalOrders;
-    }
-
-    public double getAverageOrderValue() {
-        return averageOrderValue;
-    }
-
-    public void setAverageOrderValue(double averageOrderValue) {
-        this.averageOrderValue = averageOrderValue;
-    }
-
-    public List<String> getTopSellingCategories() {
-        return topSellingCategories;
-    }
-
-    public void setTopSellingCategories(List<String> topSellingCategories) {
-        this.topSellingCategories = topSellingCategories;
-    }
-
-    public List<String> getHighDemandProducts() {
-        return highDemandProducts;
-    }
-
-    public void setHighDemandProducts(List<String> highDemandProducts) {
-        this.highDemandProducts = highDemandProducts;
-    }
-
-    public double getRepeatCustomerRate() {
-        return repeatCustomerRate;
-    }
-
-    public void setRepeatCustomerRate(double repeatCustomerRate) {
-        this.repeatCustomerRate = repeatCustomerRate;
-    }
-
-    public double getSalesGrowthRate() {
-        return salesGrowthRate;
-    }
-
-    public void setSalesGrowthRate(double salesGrowthRate) {
-        this.salesGrowthRate = salesGrowthRate;
-    }
-
-    public double getStockTurnoverRate() {
-        return stockTurnoverRate;
-    }
-
-    public void setStockTurnoverRate(double stockTurnoverRate) {
-        this.stockTurnoverRate = stockTurnoverRate;
-    }
-
-    public double getProfitMargin() {
-        return profitMargin;
-    }
-
-    public void setProfitMargin(double profitMargin) {
-        this.profitMargin = profitMargin;
-    }
-
-    public double getAverageCartSize() {
-        return averageCartSize;
-    }
-
-    public void setAverageCartSize(double averageCartSize) {
-        this.averageCartSize = averageCartSize;
-    }
-
-
-
-    public LocalDateTime getLastOrderDate() {
-        return lastOrderDate;
-    }
-
-    public void setLastOrderDate(LocalDateTime lastOrderDate) {
-        this.lastOrderDate = lastOrderDate;
     }
 
 }

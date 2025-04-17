@@ -8,7 +8,7 @@ const ShopCard = ({ shop, onClick }) => {
       <div className="shop-info">
         <h3>{shop.shopName || "Unnamed Shop"}</h3>
         <p>
-          ⭐ {shop.rating || "4.5"} | {shop.distance} away📍
+          ⭐ {(shop.averageRating || 4.5).toFixed(1)} | {shop.distance} away📍
         </p>
 
       </div>

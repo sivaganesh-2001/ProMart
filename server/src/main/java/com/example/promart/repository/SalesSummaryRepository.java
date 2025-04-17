@@ -8,10 +8,12 @@ import java.util.Optional;
 import java.time.LocalDate;
 
 public interface SalesSummaryRepository extends MongoRepository<SalesSummary, String> {
-    
-    // Optional<SalesSummary> findBySellerIdAndSaleDate(String sellerId, LocalDate saleDate);
-     Optional<SalesSummary> findBySellerId(String sellerId);
+
+    // Optional<SalesSummary> findBySellerIdAndSaleDate(String sellerId, LocalDate
+    // saleDate);
+    Optional<SalesSummary> findBySellerId(String sellerId);
+
     SalesSummary findTopBySellerIdOrderByLastUpdatedDesc(String sellerId);
-    
-    //SalesSummary findBySellerId(String sellerId);
+
+    // SalesSummary findBySellerId(String sellerId);
 }

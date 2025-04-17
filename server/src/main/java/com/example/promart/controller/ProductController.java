@@ -3,6 +3,8 @@ package com.example.promart.controller;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,23 +19,32 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.promart.model.Product;
+import com.example.promart.dto.Rating;
+import com.example.promart.model.MasterProduct;
+import com.example.promart.model.Product; // Add this import for MasterProduct
 import com.example.promart.repository.ProductRepository;
-import com.example.promart.service.ProductService;
+import com.example.promart.service.MasterProductService;
+import com.example.promart.service.ProductService; // Add this import for MasterProductService
 
-@CrossOrigin(origins = "http://localhost:3000") // Allow React frontend
-@RestController
+@RestController // Allow frontend to access the API
+@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/api/products")
 public class ProductController {
+
+    private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
 
     @Autowired
     private ProductService productService;
     @Autowired
     private ProductRepository productRepository;
+    @Autowired
+    private MasterProductService masterProductService; // Add this field for MasterProductService
 
-    public ProductController(ProductService productService, ProductRepository productRepository) {
+    public ProductController(ProductService productService, ProductRepository productRepository,
+            MasterProductService masterProductService) {
         this.productService = productService;
         this.productRepository = productRepository;
+        this.masterProductService = masterProductService;
     }
 
     @PostMapping("/")
@@ -137,11 +148,40 @@ public class ProductController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
-    
+
     @GetMapping("/match")
     public ResponseEntity<List<Product>> getMatchingProducts(@RequestParam String productName) {
         List<Product> matchedProducts = productRepository.findByProductNameIgnoreCaseContaining(productName);
         return ResponseEntity.ok(matchedProducts);
     }
-    
+
+    @GetMapping("/master/{masterId}")
+    public ResponseEntity<?> getMasterProductById(@PathVariable String masterId) {
+        try {
+            MasterProduct masterProduct = masterProductService.findById(masterId);
+            return ResponseEntity.ok(masterProduct);
+        } catch (RuntimeException e) {
+            logger.error("MasterProduct not found for ID {}: {}", masterId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "MasterProduct not found"));
+        }
+    }
+
+    @PostMapping("/{productId}/rate")
+    public ResponseEntity<?> rateMasterProduct(
+            @PathVariable String productId,
+            @RequestBody Rating ratingRequest) {
+        try {
+            MasterProduct updatedMasterProduct = masterProductService.rateMasterProduct(
+                    productId, ratingRequest.getUserId(), ratingRequest.getRating());
+            return ResponseEntity.ok(Map.of(
+                    "message", "Product rating submitted successfully!",
+                    "masterProduct", updatedMasterProduct));
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid rating for product {}: {}", productId, e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (RuntimeException e) {
+            logger.error("Error rating product ID {}: {}", productId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        }
+    }
 }

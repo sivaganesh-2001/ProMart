@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { removeFromCart } from "../Redux/Cart/cart.actions";
-import styles from "../styles/Cart.module.css";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";

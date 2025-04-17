@@ -17,7 +17,7 @@ public interface SellerRepository extends MongoRepository<Seller, String> {
     Optional<Seller> findByEmail(String email);
   
     Optional<Seller> findById(String id);
-
+    
     @Query("{ location: { $near: { $geometry: { type: 'Point', coordinates: [ ?0, ?1 ] }, $maxDistance: ?2 } } }")
     List<Seller> findByLocationNear(double latitude, double longitude, double maxDistance);
     // List<Product> findBySellerIdAndProductNameRegex(String id, String regex);

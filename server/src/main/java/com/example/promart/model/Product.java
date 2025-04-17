@@ -1,8 +1,6 @@
 package com.example.promart.model;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
@@ -24,24 +22,23 @@ public class Product {
     // New fields for top category and product category
     private String topCategory; // ID of the top category
     private String productCategory; // ID of the product category
-
-
+    private String masterId;
     private String masterProductId;
-
     private String imageUrl;
     private String sellerId;
-    // private String masterProductId; // New Field to Link Master Product
-
     @DBRef
     private String sellerEmail;
-    private int soldCount;
-    // New Fields for Analytics
+
     private LocalDateTime createdAt;
-    private LocalDateTime lastSoldAt;
-    private double totalRevenue;
-    private double averageSellingPrice;
-    private double customerRetentionRate;
-    private Map<String, Integer> dailySales;
+    private int soldCount;
+
+    public int getSoldCount() {
+        return soldCount;
+    }
+
+    public void setSoldCount(int soldCount) {
+        this.soldCount = soldCount;
+    }
 
     public String getId() {
         return id;
@@ -81,6 +78,14 @@ public class Product {
 
     public void setPrice(double price) {
         this.price = price;
+    }
+
+    public String getMasterId() {
+        return masterId;
+    }
+
+    public void setMasterId(String masterId) {
+        this.masterId = masterId;
     }
 
     public int getStock() {
@@ -131,60 +136,12 @@ public class Product {
         this.imageUrl = imageUrl;
     }
 
-    public int getSoldCount() {
-        return soldCount;
-    }
-
-    public void setSoldCount(int soldCount) {
-        this.soldCount = soldCount;
-    }
-
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getLastSoldAt() {
-        return lastSoldAt;
-    }
-
-    public void setLastSoldAt(LocalDateTime lastSoldAt) {
-        this.lastSoldAt = lastSoldAt;
-    }
-
-    public double getTotalRevenue() {
-        return totalRevenue;
-    }
-
-    public void setTotalRevenue(double totalRevenue) {
-        this.totalRevenue = totalRevenue;
-    }
-
-    public double getAverageSellingPrice() {
-        return averageSellingPrice;
-    }
-
-    public void setAverageSellingPrice(double averageSellingPrice) {
-        this.averageSellingPrice = averageSellingPrice;
-    }
-
-    public double getCustomerRetentionRate() {
-        return customerRetentionRate;
-    }
-
-    public void setCustomerRetentionRate(double customerRetentionRate) {
-        this.customerRetentionRate = customerRetentionRate;
-    }
-
-    public Map<String, Integer> getDailySales() {
-        return dailySales;
-    }
-
-    public void setDailySales(Map<String, Integer> dailySales) {
-        this.dailySales = dailySales;
     }
 
     // Constructors
@@ -200,15 +157,18 @@ public class Product {
         this.unit = unit;
         this.description = description;
         this.imageUrl = imageUrl;
-        this.soldCount = 0;
+
         this.createdAt = LocalDateTime.now();
-        this.totalRevenue = 0;
-        this.averageSellingPrice = price;
-        this.customerRetentionRate = 0;
+
         this.topCategory = topCategory; // Set top category
         this.productCategory = productCategory; // Set product category
 
-        this.dailySales = new HashMap<>();
+    }
+
+    public Product(String id, String masterId, String productName) {
+        this.id = id;
+        this.masterId = masterId;
+        this.productName = productName;
     }
 
     // Getters and Setters
@@ -220,15 +180,9 @@ public class Product {
             throw new RuntimeException("Quantity must be greater than 0");
         if (this.stock >= quantity) {
             this.stock -= quantity;
-            this.soldCount += quantity;
-            this.totalRevenue += quantity * sellingPrice;
-            this.lastSoldAt = LocalDateTime.now();
-            // Update daily sales record
-            String today = LocalDateTime.now().toLocalDate().toString();
-            this.dailySales.put(today, this.dailySales.getOrDefault(today, 0) + quantity);
 
-            // Update average selling price dynamically
-            this.averageSellingPrice = this.totalRevenue / this.soldCount;
+            String today = LocalDateTime.now().toLocalDate().toString();
+
         } else {
             throw new RuntimeException("Insufficient stock for product: " + this.productName);
         }
@@ -280,5 +234,8 @@ public class Product {
 
     public void setProductCategory(String productCategory) {
         this.productCategory = productCategory;
+    }
+
+    public Product() {
     }
 }

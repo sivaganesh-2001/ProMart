@@ -1,12 +1,12 @@
 package com.example.promart.model;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "billings_online")
 public class BillingOnline {
@@ -17,15 +17,11 @@ public class BillingOnline {
     private String sellerId;
     private List<ProductDetails> items;
     private double totalAmount;
-    private double discountApplied;
-    private double taxAmount;
-    private double profitMargin;
-    private int totalQuantity;
     private String paymentMethod;
     private String address;
     private String phone;
     private String status;
-    private String customerType; // "new" or "returning"
+    // private String customerType; // "new" or "returning"
 
     private LocalDateTime orderDate;
     @Indexed
@@ -34,11 +30,6 @@ public class BillingOnline {
     @CreatedDate
     @Indexed
     private LocalDateTime createdAt;
-
-    private Duration orderProcessingTime;
-    private boolean isRepeatCustomer;
-    private double paymentSuccessRate;
-    private String customerFeedback;
 
     public String getId() {
         return id;
@@ -80,38 +71,6 @@ public class BillingOnline {
         this.totalAmount = totalAmount;
     }
 
-    public double getDiscountApplied() {
-        return discountApplied;
-    }
-
-    public void setDiscountApplied(double discountApplied) {
-        this.discountApplied = discountApplied;
-    }
-
-    public double getTaxAmount() {
-        return taxAmount;
-    }
-
-    public void setTaxAmount(double taxAmount) {
-        this.taxAmount = taxAmount;
-    }
-
-    public double getProfitMargin() {
-        return profitMargin;
-    }
-
-    public void setProfitMargin(double profitMargin) {
-        this.profitMargin = profitMargin;
-    }
-
-    public int getTotalQuantity() {
-        return totalQuantity;
-    }
-
-    public void setTotalQuantity(int totalQuantity) {
-        this.totalQuantity = totalQuantity;
-    }
-
     public String getPaymentMethod() {
         return paymentMethod;
     }
@@ -144,13 +103,13 @@ public class BillingOnline {
         this.status = status;
     }
 
-    public String getCustomerType() {
-        return customerType;
-    }
+    // public String getCustomerType() {
+    // return customerType;
+    // }
 
-    public void setCustomerType(String customerType) {
-        this.customerType = customerType;
-    }
+    // public void setCustomerType(String customerType) {
+    // this.customerType = customerType;
+    // }
 
     public LocalDateTime getOrderDate() {
         return orderDate;
@@ -176,38 +135,6 @@ public class BillingOnline {
         this.createdAt = createdAt;
     }
 
-    public Duration getOrderProcessingTime() {
-        return orderProcessingTime;
-    }
-
-    public void setOrderProcessingTime(Duration orderProcessingTime) {
-        this.orderProcessingTime = orderProcessingTime;
-    }
-
-    public boolean isRepeatCustomer() {
-        return isRepeatCustomer;
-    }
-
-    public void setRepeatCustomer(boolean isRepeatCustomer) {
-        this.isRepeatCustomer = isRepeatCustomer;
-    }
-
-    public double getPaymentSuccessRate() {
-        return paymentSuccessRate;
-    }
-
-    public void setPaymentSuccessRate(double paymentSuccessRate) {
-        this.paymentSuccessRate = paymentSuccessRate;
-    }
-
-    public String getCustomerFeedback() {
-        return customerFeedback;
-    }
-
-    public void setCustomerFeedback(String customerFeedback) {
-        this.customerFeedback = customerFeedback;
-    }
-
     public BillingOnline() {
     }
 
@@ -219,27 +146,14 @@ public class BillingOnline {
         this.sellerId = sellerId;
         this.items = items;
         this.totalAmount = totalAmount;
-        this.discountApplied = discountApplied;
-        this.taxAmount = taxAmount;
-        this.profitMargin = profitMargin;
-        this.totalQuantity = totalQuantity;
         this.paymentMethod = paymentMethod;
         this.address = address;
         this.phone = phone;
         this.status = status;
-        this.customerType = customerType;
+        // this.customerType = customerType;
         this.orderDate = orderDate;
         this.billGeneratedTime = billGeneratedTime;
         this.createdAt = LocalDateTime.now();
-        this.isRepeatCustomer = "returning".equalsIgnoreCase(customerType);
-        this.paymentSuccessRate = 100.0;
-        this.customerFeedback = "";
-
-        if (orderDate != null && billGeneratedTime != null) {
-            this.orderProcessingTime = Duration.between(orderDate, billGeneratedTime);
-        } else {
-            this.orderProcessingTime = Duration.ZERO;
-        }
     }
 
     @Override
@@ -256,12 +170,7 @@ public class BillingOnline {
                 ", status='" + status + '\'' +
                 ", orderDate=" + orderDate +
                 ", billGeneratedTime=" + billGeneratedTime +
-                ", discountApplied=" + discountApplied +
-                ", taxAmount=" + taxAmount +
-                ", orderProcessingTime=" + orderProcessingTime +
-                ", isRepeatCustomer=" + isRepeatCustomer +
-                ", paymentSuccessRate=" + paymentSuccessRate +
-                ", customerFeedback='" + customerFeedback + '\'' +
+
                 '}';
     }
 }

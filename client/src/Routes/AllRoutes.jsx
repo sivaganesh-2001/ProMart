@@ -1,6 +1,5 @@
 import React from 'react';
 import { Route, Routes, Navigate } from 'react-router-dom';
-import PrivateRoute from '../components/PrivateRoute';
 import ProtectedAdminRoute from '../components/ProtectedAdminRoute';
 import ProtectedCustomerRoute from '../components/ProtectedCustomerRoute';
 import ProtectedSellerRoute from '../components/ProtectedSellerRoute';
@@ -9,12 +8,10 @@ import ProtectedSellerRoute from '../components/ProtectedSellerRoute';
 import Home from '../Pages/Home';
 import SignUp from '../Pages/SignUp';
 import Login from '../Pages/Login';
-import OTPVerification from '../Pages/OTPpage';
-import AllProducts from '../Pages/AllProducts';
-import SingleProduct from '../Pages/SingleProduct';
+import RecommendedProductsPage from '../Pages/RecommendedProductsPage';
 import Cart from '../Pages/Cart';
 import UserAccount from '../Pages/UserAccount';
-import Payment from '../Pages/Payment';
+
 import OrderReview from '../Pages/OrderReviewPage';
 import OrderReviewPayment from '../Pages/OrderReviewPagePayment';
 import OrderPage from '../Pages/OrderPage';
@@ -59,7 +56,7 @@ function AllRoutes() {
       <Route path="/" element={<Home />} />
       <Route path="/signup" element={<SignUp />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/otp" element={<OTPVerification />} />
+
       <Route path="/shop" element={<ExploreShops />} />
       <Route path="/all-shops" element={<AllShopsPage />} />
       <Route path="/shop/:shopId" element={<ShopProductsPage />} />
@@ -72,16 +69,14 @@ function AllRoutes() {
 
       {/* Protected Customer Routes */}
       <Route element={<ProtectedCustomerRoute />}>
-        <Route path="/allproducts/:products" element={<AllProducts />} />
-        <Route path="/allproducts/:products/:id" element={<SingleProduct />} />
+
         <Route path="/cart" element={<Cart />} />
         <Route path="/account" element={<UserAccount />} />
-        <Route path="/payment" element={<Payment />} />
         <Route path="/order-review" element={<OrderReview />} />
         <Route path="/order" element={<OrderPage />} />
         <Route path="/order-review-pay" element={<OrderReviewPayment />} />
         <Route path="/search-results" element={<SearchedProductsPage />} />
-
+        <Route path="/recommended-products" element={<RecommendedProductsPage />} />
       </Route>
 
       {/* Protected Seller Routes */}

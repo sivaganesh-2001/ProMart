@@ -2,7 +2,6 @@ package com.example.promart.service;
 
 import com.example.promart.model.ApproveSeller;
 import com.example.promart.model.Product;
-import com.example.promart.model.Rating;
 import com.example.promart.model.Seller;
 import java.util.List;
 
@@ -19,6 +18,7 @@ public interface SellerService {
       public String rejectSeller(String email);
       public boolean approveOrRejectSeller(String sellerId, String status) ;
       public boolean deleteSellerAndProducts(String sellerId);
-      public Rating addRating(String sellerId, String customerEmail, int rating, String review);
-      public List<Rating> getRatingsForSeller(String sellerId);
+      public Seller rateSeller(String sellerId, String userId, double rating);
+      public Seller findById(String sellerId);
+      public Seller getSeller(String sellerId);
 }

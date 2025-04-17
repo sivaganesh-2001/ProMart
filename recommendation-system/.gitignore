@@ -1,0 +1,45 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables
+.env
+.env.*
+
+# Flask cache / instance folders
+instance/
+*.db
+*.sqlite3
+
+# Pip packages
+venv/
+ENV/
+env/
+.venv/
+.Python
+
+# Mac / Windows hidden files
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# Pytest cache
+.pytest_cache/
+
+# Coverage reports
+htmlcov/
+.coverage
+.tox/
+.nox/
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Migrations (optional if you want to reset them often)
+migrations/

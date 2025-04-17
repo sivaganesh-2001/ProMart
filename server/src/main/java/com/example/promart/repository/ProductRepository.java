@@ -1,6 +1,7 @@
 package com.example.promart.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
@@ -17,8 +18,11 @@ public interface ProductRepository extends MongoRepository<Product, String> {
     @Query("{ 'productName': { $regex: ?0, $options: 'i' } }")
     List<Product> findByNameContaining(String productName);
 
+    Optional<Product> findById(String id);
+
     // Fetch top 5 popular products based on sold count
     List<Product> findTop5ByOrderBySoldCountDesc();
+
     List<Product> findByIdIn(List<String> ids);
 
     // List<Product> findBySellerIdAndNameContainingIgnoreCase(String sellerId,
@@ -28,7 +32,6 @@ public interface ProductRepository extends MongoRepository<Product, String> {
     @Query(value = "{ '_id': ?0 }")
     void decrementStockById(String id, int amount);
 
-List<Product> findByProductNameIgnoreCaseContaining(String productName);
-    
+    List<Product> findByProductNameIgnoreCaseContaining(String productName);
 
 }

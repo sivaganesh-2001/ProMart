@@ -19,8 +19,7 @@ public class CategoryService {
     }
 
     public Category addCategory(Category category) {
-        category.setProductCount(0); // Default count
-        category.setPopularityScore(0.0); // Default score
+  
         return categoryRepository.save(category);
     }
 

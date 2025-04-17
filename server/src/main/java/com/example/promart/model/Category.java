@@ -10,14 +10,10 @@ public class Category {
     @Id
     private String id;
     private String name;
-    private int productCount; // Helps in analytics
-    private double popularityScore; // For ML-based recommendations
-
-    public Category(String id, String name, int productCount, double popularityScore) {
+ 
+    public Category(String id, String name) {
         this.id = id;
         this.name = name;
-        this.productCount = productCount;
-        this.popularityScore = popularityScore;
     }
         
     public String getId() {
@@ -31,17 +27,5 @@ public class Category {
     }
     public void setName(String name) {
         this.name = name;
-    }
-    public int getProductCount() {
-        return productCount;
-    }
-    public void setProductCount(int productCount) {
-        this.productCount = productCount;
-    }
-    public double getPopularityScore() {
-        return popularityScore;
-    }
-    public void setPopularityScore(double popularityScore) {
-        this.popularityScore = popularityScore;
     }
 }

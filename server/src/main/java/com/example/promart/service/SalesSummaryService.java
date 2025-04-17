@@ -51,25 +51,25 @@ public class SalesSummaryService {
 
         // Fetch online and offline billing data for the last 30 days
         List<BillingOnline> onlineBills = billingOnlineRepository.findBySellerIdAndOrderDateAfter(sellerId, startDate);
-        List<BillingOffline> offlineBills = billingOfflineRepository.findBySellerIdAndOrderDateAfter(sellerId, startDate);
+        List<BillingOffline> offlineBills = billingOfflineRepository.findBySellerIdAndOrderDateAfter(sellerId,
+                startDate);
 
         // Aggregate sales data
         Map<String, Integer> productSalesMap = new HashMap<>();
 
         // Process online bills
-        onlineBills.forEach(bill -> bill.getItems().forEach(item ->
-            productSalesMap.merge(item.getProductId(), item.getQuantity(), Integer::sum)
-        ));
+        onlineBills.forEach(bill -> bill.getItems()
+                .forEach(item -> productSalesMap.merge(item.getProductId(), item.getQuantity(), Integer::sum)));
 
         // Process offline bills
-        offlineBills.forEach(bill -> bill.getItems().forEach(item ->
-            productSalesMap.merge(item.getProductId(), item.getQuantity(), Integer::sum)
-        ));
+        offlineBills.forEach(bill -> bill.getItems()
+                .forEach(item -> productSalesMap.merge(item.getProductId(), item.getQuantity(), Integer::sum)));
 
         // Convert map to list and sort in descending order
         List<ProductSalesData> productSalesDataList = productSalesMap.entrySet().stream()
                 .map(entry -> new ProductSalesData(entry.getKey(), entry.getValue()))
-                .sorted((a, b) -> Integer.compare(b.getTotalSoldQuantity(), a.getTotalSoldQuantity())) // Descending order
+                .sorted((a, b) -> Integer.compare(b.getTotalSoldQuantity(), a.getTotalSoldQuantity())) // Descending
+                                                                                                       // order
                 .collect(Collectors.toList());
 
         // Classify products into fast-moving and slow-moving
@@ -86,13 +86,16 @@ public class SalesSummaryService {
                 }
             }
         } else {
-            // If more than 5 products exist, classify using top-selling and least-selling logic
+            // If more than 5 products exist, classify using top-selling and least-selling
+            // logic
             topFastMoving = productSalesDataList.stream().limit(5).collect(Collectors.toList());
-            topSlowMoving = productSalesDataList.stream().skip(productSalesDataList.size() - 5).collect(Collectors.toList());
+            topSlowMoving = productSalesDataList.stream().skip(productSalesDataList.size() - 5)
+                    .collect(Collectors.toList());
         }
 
         // Ensure no product appears in both lists
-        Set<String> fastMovingIds = topFastMoving.stream().map(ProductSalesData::getProductId).collect(Collectors.toSet());
+        Set<String> fastMovingIds = topFastMoving.stream().map(ProductSalesData::getProductId)
+                .collect(Collectors.toSet());
         topSlowMoving = topSlowMoving.stream()
                 .filter(product -> !fastMovingIds.contains(product.getProductId()))
                 .collect(Collectors.toList());
