@@ -29,7 +29,8 @@ public class SalesComparisonService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startDate = getStartDate(timeFrame, now);
 
-        List<BillingOffline> offlineSales = billingOfflineRepository.findBySellerIdAndOrderDateAfter(sellerId, startDate);
+        List<BillingOffline> offlineSales = billingOfflineRepository.findBySellerIdAndOrderDateAfter(sellerId,
+                startDate);
         List<BillingOnline> onlineSales = billingOnlineRepository.findBySellerIdAndOrderDateAfter(sellerId, startDate);
 
         Map<String, SalesComparisonResponse> salesMap = new TreeMap<>();
@@ -62,7 +63,8 @@ public class SalesComparisonService {
         for (SalesComparisonResponse response : salesMap.values()) {
             cumulativeOnline += response.getOnlineSales();
             cumulativeOffline += response.getOfflineSales();
-            cumulativeSalesList.add(new SalesComparisonResponse(response.getLabel(), cumulativeOnline, cumulativeOffline));
+            cumulativeSalesList
+                    .add(new SalesComparisonResponse(response.getLabel(), cumulativeOnline, cumulativeOffline));
         }
 
         return cumulativeSalesList;

@@ -1,6 +1,7 @@
 package com.example.promart.model;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -12,10 +13,9 @@ public class SalesSummary {
     private String id;
     private String sellerId;
     private LocalDateTime lastUpdated;
-    private List<ProductSalesData> topFastMoving;
-    private List<ProductSalesData> topSlowMoving;
+    private List<ProductSalesData> topFastMoving = new ArrayList<>();
+    private List<ProductSalesData> topSlowMoving = new ArrayList<>();
 
-    // Constructors
     public SalesSummary() {
     }
 
@@ -24,11 +24,10 @@ public class SalesSummary {
             List<ProductSalesData> topSlowMoving) {
         this.sellerId = sellerId;
         this.lastUpdated = lastUpdated;
-        this.topFastMoving = topFastMoving;
-        this.topSlowMoving = topSlowMoving;
+        this.topFastMoving = topFastMoving != null ? topFastMoving : new ArrayList<>();
+        this.topSlowMoving = topSlowMoving != null ? topSlowMoving : new ArrayList<>();
     }
 
-    // Getters and Setters
     public String getId() {
         return id;
     }
@@ -54,18 +53,18 @@ public class SalesSummary {
     }
 
     public List<ProductSalesData> getTopFastMoving() {
-        return topFastMoving;
+        return topFastMoving != null ? topFastMoving : new ArrayList<>();
     }
 
     public void setTopFastMoving(List<ProductSalesData> topFastMoving) {
-        this.topFastMoving = topFastMoving;
+        this.topFastMoving = topFastMoving != null ? topFastMoving : new ArrayList<>();
     }
 
     public List<ProductSalesData> getTopSlowMoving() {
-        return topSlowMoving;
+        return topSlowMoving != null ? topSlowMoving : new ArrayList<>();
     }
 
     public void setTopSlowMoving(List<ProductSalesData> topSlowMoving) {
-        this.topSlowMoving = topSlowMoving;
+        this.topSlowMoving = topSlowMoving != null ? topSlowMoving : new ArrayList<>();
     }
 }

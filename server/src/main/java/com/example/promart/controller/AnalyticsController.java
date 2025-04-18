@@ -37,7 +37,7 @@ public class AnalyticsController {
 
     @Autowired
     private MonthlyAnalyticsService monthlyAnalyticsService;
- 
+
     @Autowired
     private YearlyAnalyticsService yearlyAnalyticsService;
     @Autowired
@@ -49,10 +49,9 @@ public class AnalyticsController {
     @Autowired
     private SalesComparisonService salesComparisonService;
 
-
-
     @GetMapping("/hourly")
-    public List<Map<String, Object>> geHourlySales(@RequestParam String sellerId, @RequestParam(required = false) String type) {
+    public List<Map<String, Object>> geHourlySales(@RequestParam String sellerId,
+            @RequestParam(required = false) String type) {
         return hourlyAnalyticsService.getHourlySales(sellerId, type);
     }
 
@@ -64,41 +63,39 @@ public class AnalyticsController {
     }
 
     @GetMapping("/weekly")
-    public List<Map<String, Object>> getWeeklySales(@RequestParam String sellerId, @RequestParam(required = false) String type) {
+    public List<Map<String, Object>> getWeeklySales(@RequestParam String sellerId,
+            @RequestParam(required = false) String type) {
         return weeklyAnalyticsService.getWeeklySales(sellerId, type);
     }
 
-
-
     @GetMapping("/monthly")
-    public List<Map<String, Object>> getMonthlySales(@RequestParam String sellerId, @RequestParam(required = false) String type) {
-    return monthlyAnalyticsService.getMonthlySales(sellerId, type);
-}
-
-    @GetMapping("/yearly")
-    public List<Map<String, Object>> getYearlySales(@RequestParam String sellerId, @RequestParam(required = false) String type) {
-    return yearlyAnalyticsService.getYearlySales(sellerId, type);
+    public List<Map<String, Object>> getMonthlySales(@RequestParam String sellerId,
+            @RequestParam(required = false) String type) {
+        return monthlyAnalyticsService.getMonthlySales(sellerId, type);
     }
 
+    @GetMapping("/yearly")
+    public List<Map<String, Object>> getYearlySales(@RequestParam String sellerId,
+            @RequestParam(required = false) String type) {
+        return yearlyAnalyticsService.getYearlySales(sellerId, type);
+    }
 
     @GetMapping("/slow-moving")
     public List<ProductSalesData> getSlowMovingProducts(@RequestParam String sellerId) {
         salesSummaryService.analyzeSalesData(sellerId); // Trigger analysis
         return salesSummaryService.getSlowMovingProducts(sellerId);
     }
-    
+
     @GetMapping("/fast-moving")
     public List<ProductSalesData> getFastMovingProducts(@RequestParam String sellerId) {
         salesSummaryService.analyzeSalesData(sellerId); // Trigger analysis
         return salesSummaryService.getFastMovingProducts(sellerId);
     }
 
-    
     @GetMapping("/status-count")
     public Map<String, Long> getOrderStatusCount(@RequestParam String sellerId) {
         return orderAnalyticsService.getOrderStatusCountForLastWeek(sellerId);
     }
-
 
     @GetMapping("/compare-online-offline")
     public List<SalesComparisonResponse> compareSales(
@@ -108,8 +105,4 @@ public class AnalyticsController {
         return salesComparisonService.compareSales(sellerId, timeFrame, metric);
     }
 
- 
-    
-
 }
-
